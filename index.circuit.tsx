@@ -250,6 +250,38 @@ const Usb2512B = (props: any) => (
           holeDiameter="0.3mm"
           shape="circle"
         />
+        <platedhole
+          portHints={["pin37"]}
+          pcbX="-0.75mm"
+          pcbY="-0.75mm"
+          outerDiameter="0.6mm"
+          holeDiameter="0.3mm"
+          shape="circle"
+        />
+        <platedhole
+          portHints={["pin37"]}
+          pcbX="-0.75mm"
+          pcbY="0.75mm"
+          outerDiameter="0.6mm"
+          holeDiameter="0.3mm"
+          shape="circle"
+        />
+        <platedhole
+          portHints={["pin37"]}
+          pcbX="0.75mm"
+          pcbY="-0.75mm"
+          outerDiameter="0.6mm"
+          holeDiameter="0.3mm"
+          shape="circle"
+        />
+        <platedhole
+          portHints={["pin37"]}
+          pcbX="0.75mm"
+          pcbY="0.75mm"
+          outerDiameter="0.6mm"
+          holeDiameter="0.3mm"
+          shape="circle"
+        />
       </footprint>
     }
   />
@@ -385,6 +417,15 @@ const UsbC12Hub = () => (
     <schematicsection name="Output1" displayName="Downstream USB-C Port 1" />
     <schematicsection name="Output2" displayName="Downstream USB-C Port 2" />
 
+    <copperpour
+      name="bottom_gnd_pour"
+      layer="bottom"
+      connectsTo="net.GND"
+      padMargin="0.25mm"
+      traceMargin="0.2mm"
+      boardEdgeMargin="0.25mm"
+    />
+
     <UsbC16
       name="J_UP"
       pcbX={-30}
@@ -460,6 +501,9 @@ const UsbC12Hub = () => (
       }
     />
 
+    <capacitor name="C_XTAL1" capacitance="18pF" footprint="0402" pcbX={-3} pcbY={6.5} schSectionName="Hub" schX={-2.5} schY={-10} schOrientation="vertical" />
+    <capacitor name="C_XTAL2" capacitance="18pF" footprint="0402" pcbX={3} pcbY={6.5} schSectionName="Hub" schX={2.5} schY={-10} schOrientation="vertical" />
+
     <resistor name="R_CC_UP1" resistance="5.1k" footprint="0402" pcbX={-25} pcbY={-6} schSectionName="Upstream" schX={-16} schY={1} />
     <resistor name="R_CC_UP2" resistance="5.1k" footprint="0402" pcbX={-23} pcbY={-6} schSectionName="Upstream" schX={-16} schY={-1} />
     <resistor name="R_CC_D1_1" resistance="56k" footprint="0402" pcbX={20} pcbY={5} schSectionName="Output1" schX={16} schY={10} />
@@ -490,6 +534,10 @@ const UsbC12Hub = () => (
     <capacitor name="C_RESET" capacitance="1uF" footprint="0603" pcbX={-11} pcbY={-2} schSectionName="Hub" schX={-5} schY={-4} schOrientation="vertical" />
     <capacitor name="C_PORT1" capacitance="10uF" footprint="0805" pcbX={21} pcbY={9} schSectionName="Output1" schX={16} schY={6} schOrientation="vertical" />
     <capacitor name="C_PORT2" capacitance="10uF" footprint="0805" pcbX={21} pcbY={-9} schSectionName="Output2" schX={16} schY={-10} schOrientation="vertical" />
+    <capacitor name="C_U2_IN_BULK" capacitance="10uF" footprint="0805" pcbX={10.5} pcbY={-4.5} schSectionName="PortPower" schX={7} schY={-3} schOrientation="vertical" />
+    <capacitor name="C_U2_IN" capacitance="100nF" footprint="0402" pcbX={11.5} pcbY={3} schSectionName="PortPower" schX={7} schY={3} schOrientation="vertical" />
+    <capacitor name="C_U2_OUTA" capacitance="100nF" footprint="0402" pcbX={20.5} pcbY={3} schSectionName="PortPower" schX={13} schY={3} schOrientation="vertical" />
+    <capacitor name="C_U2_OUTB" capacitance="100nF" footprint="0402" pcbX={20.5} pcbY={-3} schSectionName="PortPower" schX={13} schY={-3} schOrientation="vertical" />
 
     <resistor name="R_SH_UP" resistance="1M" footprint="0402" pcbX={-24.5} pcbY={6} schSectionName="Upstream" schX={-20} schY={-5} />
     <capacitor name="C_SH_UP" capacitance="4.7nF" footprint="0402" pcbX={-23.5} pcbY={4} schSectionName="Upstream" schX={-18} schY={-5} schOrientation="vertical" />
@@ -565,13 +613,17 @@ const UsbC12Hub = () => (
     <trace name="RESET_C_GND" from="C_RESET.pin2" to="net.GND" thickness="0.15mm" />
 
     <trace name="XTAL_IN" from="U1.XTALIN" to="Y1.pin1" />
+    <trace name="XTAL_IN_C" from="C_XTAL1.pin1" to="Y1.pin1" />
+    <trace name="XTAL_IN_C_GND" from="C_XTAL1.pin2" to="net.GND" thickness="0.15mm" />
     <trace name="XTAL_OUT" from="U1.XTALOUT" to="Y1.pin2" />
+    <trace name="XTAL_OUT_C" from="C_XTAL2.pin1" to="Y1.pin2" />
+    <trace name="XTAL_OUT_C_GND" from="C_XTAL2.pin2" to="net.GND" thickness="0.15mm" />
     <trace name="RBIAS_PIN" from="U1.RBIAS" to="R_RBIAS.pin1" />
     <trace name="RBIAS_GND" from="R_RBIAS.pin2" to="net.GND" thickness="0.15mm" />
     <trace name="CRFILT_PIN" from="U1.CRFILT" to="C_CRFILT.pin1" />
     <trace name="CRFILT_GND" from="C_CRFILT.pin2" to="net.GND" thickness="0.15mm" />
     <trace name="PLLFILT_PIN" from="U1.PLLFILT" to="C_PLLFILT.pin1" />
-    <trace name="PLLFILT_GND" from="C_PLLFILT.pin2" to="C_CRFILT.pin2" thickness="0.15mm" />
+    <trace name="PLLFILT_GND" from="C_PLLFILT.pin2" to="net.GND" thickness="0.15mm" />
 
     {[
       "C_3V3_BULK",
@@ -595,6 +647,14 @@ const UsbC12Hub = () => (
     <trace name="P1_CAP_GND" from="C_PORT1.pin2" to="net.GND" thickness="0.15mm" />
     <trace name="P2_CAP_PWR" from="C_PORT2.pin1" to="net.VBUS_P2" thickness="0.5mm" />
     <trace name="P2_CAP_GND" from="C_PORT2.pin2" to="net.GND" thickness="0.15mm" />
+    <trace name="U2_IN_BULK_PWR" from="C_U2_IN_BULK.pin1" to="net.V5_SYS" thickness="0.5mm" />
+    <trace name="U2_IN_BULK_GND" from="C_U2_IN_BULK.pin2" to="net.GND" thickness="0.15mm" />
+    <trace name="U2_IN_BYPASS_PWR" from="C_U2_IN.pin1" to="net.V5_SYS" />
+    <trace name="U2_IN_BYPASS_GND" from="C_U2_IN.pin2" to="net.GND" thickness="0.15mm" />
+    <trace name="U2_OUTA_BYPASS_PWR" from="C_U2_OUTA.pin1" to="net.VBUS_P1" />
+    <trace name="U2_OUTA_BYPASS_GND" from="C_U2_OUTA.pin2" to="net.GND" thickness="0.15mm" />
+    <trace name="U2_OUTB_BYPASS_PWR" from="C_U2_OUTB.pin1" to="net.VBUS_P2" />
+    <trace name="U2_OUTB_BYPASS_GND" from="C_U2_OUTB.pin2" to="net.GND" thickness="0.15mm" />
 
     {[
       ["UP", "J_UP"],
