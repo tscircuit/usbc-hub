@@ -14,7 +14,12 @@ in advance.
 - [x] Generated build DRC contains no errors or warnings, including the placement
       DRC (courtyard overlaps, board-edge and mounting-hole clearance).
 - [x] `tsci check shorts index.circuit.tsx` reports no shorts.
-- [x] Schematic and PCB snapshots are committed under `__snapshots__/`.
+- [x] Schematic and PCB snapshots are committed under `__snapshots__/`. CI enforces
+      only the schematic snapshot: the PCB snapshot contains autorouted geometry
+      and is not reproducible across machines, so the committed copy is a visual
+      reference rather than a regression gate. Freezing it would require pinning
+      the route via `pcbRouteCache`, which is not worth doing while the autoroute
+      is still slated for manual replacement.
 - [x] USB2512B crystal load capacitors, AP2176 local bypass capacitors, bottom GND pour, and exposed-pad thermal vias are present in the source and BOM.
 
 ## Closed against the Microchip schematic checklist (DS00004539)
