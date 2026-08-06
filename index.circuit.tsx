@@ -57,9 +57,13 @@ const usbC16PinLabels = {
   pin16: "SHELL4",
 } as const
 
+// `standard` is metadata only - it tags the connector as USB-C in the circuit
+// JSON but supplies no pinout or footprint of its own, so the explicit
+// pinLabels and footprint below still carry the design.
 const UsbC16 = (props: any) => (
   <connector
     {...props}
+    standard="usb_c"
     manufacturerPartNumber="HRO-TYPE-C-31-M-12"
     pinLabels={usbC16PinLabels}
     noConnect={["SBU1", "SBU2"]}
