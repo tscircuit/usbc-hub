@@ -101,7 +101,7 @@ const Usb2512B = (props: any) => (
     schWidth={2.8}
     schHeight={3}
     pinLabels={usb2512bPinLabels}
-    noConnect={["TEST", "NC1", "NC2", "NC3", "NC4", "NC5", "NC6", "NC7", "NC8"]}
+    noConnect={["NC1", "NC2", "NC3", "NC4", "NC5", "NC6", "NC7", "NC8"]}
     pinAttributes={{
       VDDA33_1: { requiresPower: true, shouldHaveDecouplingCapacitor: true },
       VDDA33_2: { requiresPower: true, shouldHaveDecouplingCapacitor: true },
@@ -110,7 +110,9 @@ const Usb2512B = (props: any) => (
       VDD33_1: { requiresPower: true, shouldHaveDecouplingCapacitor: true },
       VDD33_2: { requiresPower: true, shouldHaveDecouplingCapacitor: true },
       GND_EP: { requiresGround: true, mustBeConnected: true },
-      TEST: { doNotConnect: true },
+      // DS00004539: "TEST (pin 11), this pin must be tied directly to digital
+      // ground in order to ensure proper operation."
+      TEST: { requiresGround: true, mustBeConnected: true },
       NC1: { doNotConnect: true },
       NC2: { doNotConnect: true },
       NC3: { doNotConnect: true },
@@ -129,11 +131,11 @@ const Usb2512B = (props: any) => (
           "RESET_N",
           "CFG_SEL0",
           "CFG_SEL1",
+          "TEST",
           "NC1",
           "NC2",
           "NC3",
           "NC4",
-          "TEST",
         ],
         direction: "top-to-bottom",
       },
@@ -334,27 +336,70 @@ const Ap2176s = (props: any) => (
   />
 )
 
-const dataTraces = [
-  ["UP_DP_A", "J_UP.DP1", "net.USB_UP_DP"],
-  ["UP_DP_B", "J_UP.DP2", "net.USB_UP_DP"],
-  ["UP_DM_A", "J_UP.DM1", "net.USB_UP_DM"],
-  ["UP_DM_B", "J_UP.DM2", "net.USB_UP_DM"],
-  ["HUB_UP_DP", "U1.USBDP_UP", "net.USB_UP_DP"],
-  ["HUB_UP_DM", "U1.USBDM_UP", "net.USB_UP_DM"],
+// Push-pull, active-low reset supervisor. DS00004539 explicitly rules out an RC
+// reset on RESET_N and asks for a push-pull (not open-drain) monotonic reset.
+const Mic809 = (props: any) => (
+  <chip
+    {...props}
+    manufacturerPartNumber="MIC809SUY-TR"
+    schHeight={0.6}
+    footprint="sot23"
+    pinLabels={{
+      pin1: "GND",
+      pin2: "RESET_N",
+      pin3: "VCC",
+    }}
+    pinAttributes={{
+      VCC: { requiresPower: true },
+      GND: { requiresGround: true },
+    }}
+  />
+)
 
-  ["P1_DP_A", "J_D1.DP1", "net.USB_P1_DP"],
-  ["P1_DP_B", "J_D1.DP2", "net.USB_P1_DP"],
-  ["P1_DM_A", "J_D1.DM1", "net.USB_P1_DM"],
-  ["P1_DM_B", "J_D1.DM2", "net.USB_P1_DM"],
-  ["HUB_P1_DP", "U1.USBDP_DN1", "net.USB_P1_DP"],
-  ["HUB_P1_DM", "U1.USBDM_DN1", "net.USB_P1_DM"],
-
-  ["P2_DP_A", "J_D2.DP1", "net.USB_P2_DP"],
-  ["P2_DP_B", "J_D2.DP2", "net.USB_P2_DP"],
-  ["P2_DM_A", "J_D2.DM1", "net.USB_P2_DM"],
-  ["P2_DM_B", "J_D2.DM2", "net.USB_P2_DM"],
-  ["HUB_P2_DP", "U1.USBDP_DN2", "net.USB_P2_DP"],
-  ["HUB_P2_DM", "U1.USBDM_DN2", "net.USB_P2_DM"],
+// Each Type-C receptacle exposes the pair twice (A6/A7 and B6/B7). Shorting the
+// duplicates at the connector pads and running a single trunk to the hub keeps
+// the router from opening a long branch off a 480 Mbit/s pair.
+//
+// A <differentialpair> constraint cannot be attached on top of this: tscircuit
+// requires a two-terminal connection, and the A/B duplicates make each pair net
+// three-terminal. The 90 ohm / length-match targets stay a manual-routing gate
+// (see CHECKLIST.md).
+//
+// The A/B duplicates are physically interleaved (DM2, DP1, DM1, DP2), so each
+// short has to cross the other signal. `crossX` puts that crossing on a ~1 mm
+// bottom-layer hop immediately behind the receptacle instead of letting the
+// router take it around the board.
+const usbPairs = [
+  {
+    id: "UP",
+    connector: "J_UP",
+    dpPin: "USBDP_UP",
+    dmPin: "USBDM_UP",
+    dpY: [-0.25, 0.75],
+    dmY: [0.25, -0.75],
+    dpCrossX: -24.5,
+    dmCrossX: -22.4,
+  },
+  {
+    id: "P1",
+    connector: "J_D1",
+    dpPin: "USBDP_DN1",
+    dmPin: "USBDM_DN1",
+    dpY: [10.25, 9.25],
+    dmY: [9.75, 10.75],
+    dpCrossX: 24.5,
+    dmCrossX: 22.4,
+  },
+  {
+    id: "P2",
+    connector: "J_D2",
+    dpPin: "USBDP_DN2",
+    dmPin: "USBDM_DN2",
+    dpY: [-9.75, -10.75],
+    dmY: [-10.25, -9.25],
+    dpCrossX: 24.5,
+    dmCrossX: 22.4,
+  },
 ] as const
 
 const powerTraces = [
@@ -374,25 +419,32 @@ const powerTraces = [
   ["PORT2_VBUS_B", "J_D2.VBUS2", "net.VBUS_P2"],
 ] as const
 
-const groundTraces = [
-  ["UP_GND_A", "J_UP.GND1", "net.GND"],
-  ["UP_GND_B", "J_UP.GND2", "net.GND"],
-  ["P1_GND_A", "J_D1.GND1", "net.GND"],
-  ["P1_GND_B", "J_D1.GND2", "net.GND"],
-  ["P2_GND_A", "J_D2.GND1", "net.GND"],
-  ["P2_GND_B", "J_D2.GND2", "net.GND"],
-  ["LDO_GND", "U3.GND", "net.GND"],
-  ["SWITCH_GND", "U2.GND", "net.GND"],
-  ["HUB_EP_GND", "U1.GND_EP", "net.GND"],
+// Connector and power-stage returns carry the full VBUS current, so they get the
+// same copper as the VBUS traces rather than signal-width copper.
+const powerGroundTraces = [
+  ["UP_GND_A", "J_UP.GND1"],
+  ["UP_GND_B", "J_UP.GND2"],
+  ["P1_GND_A", "J_D1.GND1"],
+  ["P1_GND_B", "J_D1.GND2"],
+  ["P2_GND_A", "J_D2.GND1"],
+  ["P2_GND_B", "J_D2.GND2"],
+  ["LDO_GND", "U3.GND"],
+  ["SWITCH_GND", "U2.GND"],
+  ["HUB_EP_GND", "U1.GND_EP"],
 ] as const
 
-const hubPowerTraces = [
-  ["HUB_VDDA1", "U1.VDDA33_1", "net.V3_3"],
-  ["HUB_VDDA2", "U1.VDDA33_2", "net.V3_3"],
-  ["HUB_VDDA3", "U1.VDDA33_3", "net.V3_3"],
-  ["HUB_VDDA4", "U1.VDDA33_4", "net.V3_3"],
-  ["HUB_VDD1", "U1.VDD33_1", "net.V3_3"],
-  ["HUB_VDD2", "U1.VDD33_2", "net.V3_3"],
+// VDD33 is the digital rail; VDDA33 sits behind FB1 per DS00004539 ("connection
+// to +3.3V through a ferrite bead").
+const hubDigitalPowerTraces = [
+  ["HUB_VDD1", "U1.VDD33_1"],
+  ["HUB_VDD2", "U1.VDD33_2"],
+] as const
+
+const hubAnalogPowerTraces = [
+  ["HUB_VDDA1", "U1.VDDA33_1"],
+  ["HUB_VDDA2", "U1.VDDA33_2"],
+  ["HUB_VDDA3", "U1.VDDA33_3"],
+  ["HUB_VDDA4", "U1.VDDA33_4"],
 ] as const
 
 const UsbC12Hub = () => (
@@ -404,7 +456,7 @@ const UsbC12Hub = () => (
     borderRadius="2mm"
     isViaInPadAllowed
     defaultTraceWidth="0.15mm"
-    autorouterEffortLevel="1x"
+    autorouterEffortLevel="2x"
     autorouter={{
       preset: "auto",
       traceClearance: "0.15mm",
@@ -454,19 +506,39 @@ const UsbC12Hub = () => (
       schY={-8}
     />
 
-    <Usb2512B name="U1" pcbX={0} pcbY={0} schSectionName="Hub" schX={0} schY={0} />
-    <Ap2176s name="U2" pcbX={16} pcbY={0} schSectionName="PortPower" schX={10} schY={0} />
-    <Ap2112k33 name="U3" pcbX={-17} pcbY={9} schSectionName="Power" schX={-10} schY={12} />
+    {/*
+      U1 is rotated 180 deg so the four downstream data pins (1-4) face the
+      downstream receptacles and the strap pins face the strap resistors. In the
+      unrotated orientation the downstream pins pointed back at the upstream
+      connector, which is what forced the 35-52 mm high-speed detours.
+    */}
+    <Usb2512B name="U1" pcbX={0} pcbY={0} pcbRotation={180} schSectionName="Hub" schX={0} schY={0} />
+    <Ap2176s name="U2" pcbX={17} pcbY={0} schSectionName="PortPower" schX={10} schY={0} />
+    <Ap2112k33 name="U3" pcbX={-15} pcbY={8} schSectionName="Power" schX={-10} schY={12} />
+    <Mic809 name="U4" pcbX={-8} pcbY={-1} pcbRotation={180} schSectionName="Hub" schX={-7} schY={-4} />
 
     <fuse
       name="F1"
-      currentRating="500mA"
+      currentRating="0.5A"
       voltageRating="6V"
       footprint="1206"
       pcbX={-24}
-      pcbY={9}
+      pcbY={8}
       schSectionName="Power"
       schX={-14}
+      schY={12}
+    />
+
+    {/* Analog supply ferrite, with bulk on both sides per DS00004539. */}
+    <inductor
+      name="FB1"
+      inductance="0"
+      manufacturerPartNumber="BLM18PG601SN1D"
+      footprint="0603"
+      pcbX={-8}
+      pcbY={4.5}
+      schSectionName="Power"
+      schX={-4}
       schY={12}
     />
 
@@ -474,8 +546,8 @@ const UsbC12Hub = () => (
       name="Y1"
       frequency="24MHz"
       loadCapacitance="12pF"
-      pcbX={0}
-      pcbY={6.5}
+      pcbX={0.9}
+      pcbY={-7.4}
       schSectionName="Hub"
       schX={0}
       schY={-10}
@@ -501,101 +573,161 @@ const UsbC12Hub = () => (
       }
     />
 
-    <capacitor name="C_XTAL1" capacitance="18pF" footprint="0402" pcbX={-3} pcbY={6.5} schSectionName="Hub" schX={-2.5} schY={-10} schOrientation="vertical" />
-    <capacitor name="C_XTAL2" capacitance="18pF" footprint="0402" pcbX={3} pcbY={6.5} schSectionName="Hub" schX={2.5} schY={-10} schOrientation="vertical" />
+    <capacitor name="C_XTAL1" capacitance="18pF" footprint="0402" pcbX={-2.1} pcbY={-7.4} pcbRotation={180} schSectionName="Hub" schX={-2.5} schY={-10} schOrientation="vertical" />
+    <capacitor name="C_XTAL2" capacitance="18pF" footprint="0402" pcbX={3.8} pcbY={-7.4} schSectionName="Hub" schX={2.5} schY={-10} schOrientation="vertical" />
 
-    <resistor name="R_CC_UP1" resistance="5.1k" footprint="0402" pcbX={-25} pcbY={-6} schSectionName="Upstream" schX={-16} schY={1} />
-    <resistor name="R_CC_UP2" resistance="5.1k" footprint="0402" pcbX={-23} pcbY={-6} schSectionName="Upstream" schX={-16} schY={-1} />
-    <resistor name="R_CC_D1_1" resistance="56k" footprint="0402" pcbX={20} pcbY={5} schSectionName="Output1" schX={16} schY={10} />
-    <resistor name="R_CC_D1_2" resistance="56k" footprint="0402" pcbX={22} pcbY={5} schSectionName="Output1" schX={16} schY={8} />
-    <resistor name="R_CC_D2_1" resistance="56k" footprint="0402" pcbX={20} pcbY={-5} schSectionName="Output2" schX={16} schY={-6} />
-    <resistor name="R_CC_D2_2" resistance="56k" footprint="0402" pcbX={22} pcbY={-5} schSectionName="Output2" schX={16} schY={-8} />
+    <resistor name="R_CC_UP1" resistance="5.1k" footprint="0402" pcbX={-23.9} pcbY={-3.2} schSectionName="Upstream" schX={-16} schY={1} />
+    <resistor name="R_CC_UP2" resistance="5.1k" footprint="0402" pcbX={-23.9} pcbY={3.2} schSectionName="Upstream" schX={-16} schY={-1} />
+    <resistor name="R_CC_D1_1" resistance="56k" footprint="0402" pcbX={23.9} pcbY={12.6} pcbRotation={180} schSectionName="Output1" schX={16} schY={10} />
+    <resistor name="R_CC_D1_2" resistance="56k" footprint="0402" pcbX={23.9} pcbY={7} pcbRotation={180} schSectionName="Output1" schX={16} schY={8} />
+    <resistor name="R_CC_D2_1" resistance="56k" footprint="0402" pcbX={23.9} pcbY={-7} pcbRotation={180} schSectionName="Output2" schX={16} schY={-6} />
+    <resistor name="R_CC_D2_2" resistance="56k" footprint="0402" pcbX={23.9} pcbY={-12.6} pcbRotation={180} schSectionName="Output2" schX={16} schY={-8} />
 
-    <resistor name="R_VBUS_HI" resistance="100k" footprint="0402" pcbX={-9} pcbY={7} schSectionName="Hub" schX={-7} schY={4} />
-    <resistor name="R_VBUS_LO" resistance="100k" footprint="0402" pcbX={-7} pcbY={7} schSectionName="Hub" schX={-5} schY={4} />
-    <resistor name="R_RBIAS" resistance="12k" footprint="0402" pcbX={-5} pcbY={-5} schSectionName="Hub" schX={-4.1} schY={-8} />
-    <resistor name="R_RESET" resistance="10k" footprint="0402" pcbX={-7} pcbY={-2} schSectionName="Hub" schX={-7} schY={-4} />
-    <resistor name="R_CFG0" resistance="100k" footprint="0402" pcbX={-7} pcbY={2} schSectionName="Hub" schX={-7} schY={0} />
-    <resistor name="R_CFG1" resistance="10k" footprint="0402" pcbX={-7} pcbY={4} schSectionName="Hub" schX={-7} schY={-2} />
-    <resistor name="R_NONREM0" resistance="100k" footprint="0402" pcbX={7} pcbY={2} schSectionName="Hub" schX={7} schY={0} />
-    <resistor name="R_NONREM1" resistance="100k" footprint="0402" pcbX={7} pcbY={4} schSectionName="Hub" schX={7} schY={-2} />
+    {/* Bus-powered mode: VBUS_DET is tied to VDD33 through a series resistor
+        (DS00004539 allows 820 ohm - 10 kohm), not to a divider off VBUS. */}
+    <resistor name="R_VBUS_DET" resistance="10k" footprint="0402" pcbX={-4.6} pcbY={-4.5} schSectionName="Hub" schX={-7} schY={4} />
+    <resistor name="R_RBIAS" resistance="12k" footprint="0402" pcbX={4.8} pcbY={-5} pcbRotation={270} schSectionName="Hub" schX={-4.1} schY={-8} />
+    <resistor name="R_CFG0" resistance="100k" footprint="0402" pcbX={-4.6} pcbY={-1.9} pcbRotation={180} schSectionName="Hub" schX={-7} schY={0} />
+    <resistor name="R_CFG1" resistance="10k" footprint="0402" pcbX={-4.6} pcbY={-3.2} pcbRotation={180} schSectionName="Hub" schX={-7} schY={-2} />
+    <resistor name="R_NONREM0" resistance="100k" footprint="0402" pcbX={-4.6} pcbY={-5.6} pcbRotation={180} schSectionName="Hub" schX={7} schY={0} />
+    <resistor name="R_NONREM1" resistance="100k" footprint="0402" pcbX={-4.6} pcbY={1.7} pcbRotation={180} schSectionName="Hub" schX={7} schY={-2} />
 
-    <capacitor name="C_VBUS" capacitance="4.7uF" footprint="0603" pcbX={-20} pcbY={13} schSectionName="Power" schX={-14} schY={9} schOrientation="vertical" />
-    <capacitor name="C_LDO_OUT" capacitance="1uF" footprint="0603" pcbX={-13} pcbY={12} schSectionName="Power" schX={-8} schY={10} schOrientation="vertical" />
-    <capacitor name="C_3V3_BULK" capacitance="1uF" footprint="0603" pcbX={-5} pcbY={9} schSectionName="Power" schX={-6} schY={12} schOrientation="vertical" />
-    <capacitor name="C_VDDA1" capacitance="100nF" footprint="0402" pcbX={-4} pcbY={5} schSectionName="Hub" schX={-6} schY={8} schOrientation="vertical" />
-    <capacitor name="C_VDDA2" capacitance="100nF" footprint="0402" pcbX={-2} pcbY={5} schSectionName="Hub" schX={-4} schY={8} schOrientation="vertical" />
-    <capacitor name="C_VDDA3" capacitance="100nF" footprint="0402" pcbX={-4.25} pcbY={3} schSectionName="Hub" schX={-2} schY={8} schOrientation="vertical" />
-    <capacitor name="C_VDDA4" capacitance="100nF" footprint="0402" pcbX={2} pcbY={5} schSectionName="Hub" schX={0} schY={8} schOrientation="vertical" />
-    <capacitor name="C_VDD1" capacitance="100nF" footprint="0402" pcbX={4} pcbY={5} schSectionName="Hub" schX={2} schY={8} schOrientation="vertical" />
-    <capacitor name="C_VDD2" capacitance="100nF" footprint="0402" pcbX={5} pcbY={3} schSectionName="Hub" schX={4} schY={8} schOrientation="vertical" />
-    <capacitor name="C_CRFILT" capacitance="100nF" footprint="0402" pcbX={-2} pcbY={-5} schSectionName="Hub" schX={-1.9} schY={-8} schOrientation="vertical" />
-    <capacitor name="C_PLLFILT" capacitance="100nF" footprint="0402" pcbX={2} pcbY={-5} schSectionName="Hub" schX={2} schY={-8} schOrientation="vertical" />
-    <capacitor name="C_RESET" capacitance="1uF" footprint="0603" pcbX={-11} pcbY={-2} schSectionName="Hub" schX={-5} schY={-4} schOrientation="vertical" />
-    <capacitor name="C_PORT1" capacitance="10uF" footprint="0805" pcbX={21} pcbY={9} schSectionName="Output1" schX={16} schY={6} schOrientation="vertical" />
-    <capacitor name="C_PORT2" capacitance="10uF" footprint="0805" pcbX={21} pcbY={-9} schSectionName="Output2" schX={16} schY={-10} schOrientation="vertical" />
-    <capacitor name="C_U2_IN_BULK" capacitance="10uF" footprint="0805" pcbX={10.5} pcbY={-4.5} schSectionName="PortPower" schX={7} schY={-3} schOrientation="vertical" />
-    <capacitor name="C_U2_IN" capacitance="100nF" footprint="0402" pcbX={11.5} pcbY={3} schSectionName="PortPower" schX={7} schY={3} schOrientation="vertical" />
-    <capacitor name="C_U2_OUTA" capacitance="100nF" footprint="0402" pcbX={20.5} pcbY={3} schSectionName="PortPower" schX={13} schY={3} schOrientation="vertical" />
-    <capacitor name="C_U2_OUTB" capacitance="100nF" footprint="0402" pcbX={20.5} pcbY={-3} schSectionName="PortPower" schX={13} schY={-3} schOrientation="vertical" />
+    {/* AP2176 FLGx are open-drain (DS31814 Fig. "Typical Applications Circuit"
+        shows 10 k pull-ups); OCS_Nx would otherwise read a permanent fault. */}
+    <resistor name="R_OCS1" resistance="10k" footprint="0402" pcbX={1.6} pcbY={6.7} pcbRotation={90} schSectionName="PortPower" schX={5} schY={3} />
+    <resistor name="R_OCS2" resistance="10k" footprint="0402" pcbX={3} pcbY={6.7} pcbRotation={90} schSectionName="PortPower" schX={5} schY={-3} />
 
-    <resistor name="R_SH_UP" resistance="1M" footprint="0402" pcbX={-24.5} pcbY={6} schSectionName="Upstream" schX={-20} schY={-5} />
-    <capacitor name="C_SH_UP" capacitance="4.7nF" footprint="0402" pcbX={-23.5} pcbY={4} schSectionName="Upstream" schX={-18} schY={-5} schOrientation="vertical" />
-    <resistor name="R_SH_D1" resistance="1M" footprint="0402" pcbX={23} pcbY={16} schSectionName="Output1" schX={20} schY={3} />
-    <capacitor name="C_SH_D1" capacitance="4.7nF" footprint="0402" pcbX={21} pcbY={16} schSectionName="Output1" schX={18} schY={3} schOrientation="vertical" />
-    <resistor name="R_SH_D2" resistance="1M" footprint="0402" pcbX={23} pcbY={-16} schSectionName="Output2" schX={20} schY={-13} />
-    <capacitor name="C_SH_D2" capacitance="4.7nF" footprint="0402" pcbX={21} pcbY={-16} schSectionName="Output2" schX={18} schY={-13} schOrientation="vertical" />
+    {/* Unswitched bulk on V5_SYS is held to 9.4 uF so the upstream port stays
+        inside the USB-IF 10 uF inrush limit quoted in DS00004539. */}
+    <capacitor name="C_VBUS" capacitance="4.7uF" footprint="0603" pcbX={-19.1} pcbY={8.95} pcbRotation={180} schSectionName="Power" schX={-14} schY={9} schOrientation="vertical" />
+    <capacitor name="C_LDO_OUT" capacitance="1uF" footprint="0603" pcbX={-11.1} pcbY={8.95} schSectionName="Power" schX={-8} schY={10} schOrientation="vertical" />
+    <capacitor name="C_3V3_BULK" capacitance="1uF" footprint="0603" pcbX={-11.5} pcbY={4.5} pcbRotation={180} schSectionName="Power" schX={-6} schY={12} schOrientation="vertical" />
+    <capacitor name="C_3V3A_BULK" capacitance="1uF" footprint="0603" pcbX={-4.8} pcbY={4.5} schSectionName="Power" schX={-2} schY={12} schOrientation="vertical" />
+
+    {/* One decoupling capacitor per supply pin, on the pin's own edge. */}
+    <capacitor name="C_VDDA1" capacitance="100nF" footprint="0402" pcbX={4.9} pcbY={1.3} schSectionName="Hub" schX={-6} schY={8} schOrientation="vertical" />
+    <capacitor name="C_VDDA2" capacitance="100nF" footprint="0402" pcbX={2} pcbY={4.6} pcbRotation={90} schSectionName="Hub" schX={-4} schY={8} schOrientation="vertical" />
+    <capacitor name="C_VDDA3" capacitance="100nF" footprint="0402" pcbX={-1.9} pcbY={-5} pcbRotation={270} schSectionName="Hub" schX={-2} schY={8} schOrientation="vertical" />
+    <capacitor name="C_VDDA4" capacitance="100nF" footprint="0402" pcbX={2.2} pcbY={-5} pcbRotation={270} schSectionName="Hub" schX={0} schY={8} schOrientation="vertical" />
+    <capacitor name="C_VDD1" capacitance="100nF" footprint="0402" pcbX={-1.9} pcbY={4.6} pcbRotation={90} schSectionName="Hub" schX={2} schY={8} schOrientation="vertical" />
+    <capacitor name="C_VDD2" capacitance="100nF" footprint="0402" pcbX={-4.6} pcbY={0} pcbRotation={180} schSectionName="Hub" schX={4} schY={8} schOrientation="vertical" />
+
+    {/* DS00004539 wants both a 0.01 uF bypass and a >=0.1 uF low-ESR bulk on
+        CRFILT and PLLFILT, each as close to the pin as possible. */}
+    <capacitor name="C_CRFILT_HF" capacitance="10nF" footprint="0402" pcbX={0} pcbY={4.6} pcbRotation={90} schSectionName="Hub" schX={-1.9} schY={-6} schOrientation="vertical" />
+    <capacitor name="C_CRFILT" capacitance="100nF" footprint="0402" pcbX={0} pcbY={6.7} pcbRotation={90} schSectionName="Hub" schX={-1.9} schY={-8} schOrientation="vertical" />
+    <capacitor name="C_PLLFILT_HF" capacitance="10nF" footprint="0402" pcbX={0.9} pcbY={-5} pcbRotation={270} schSectionName="Hub" schX={2} schY={-6} schOrientation="vertical" />
+    <capacitor name="C_PLLFILT" capacitance="100nF" footprint="0402" pcbX={3.5} pcbY={-5} pcbRotation={270} schSectionName="Hub" schX={2} schY={-8} schOrientation="vertical" />
+
+    <capacitor name="C_U4" capacitance="100nF" footprint="0402" pcbX={-12} pcbY={-1} pcbRotation={180} schSectionName="Hub" schX={-5} schY={-4} schOrientation="vertical" />
+
+    <capacitor name="C_PORT1" capacitance="10uF" footprint="0805" pcbX={23.8} pcbY={15} pcbRotation={90} schSectionName="Output1" schX={16} schY={6} schOrientation="vertical" />
+    <capacitor name="C_PORT2" capacitance="10uF" footprint="0805" pcbX={23.8} pcbY={-15} pcbRotation={270} schSectionName="Output2" schX={16} schY={-10} schOrientation="vertical" />
+    <capacitor name="C_U2_IN_BULK" capacitance="4.7uF" footprint="0805" pcbX={21.6} pcbY={3.6} schSectionName="PortPower" schX={7} schY={-3} schOrientation="vertical" />
+    <capacitor name="C_U2_IN" capacitance="100nF" footprint="0402" pcbX={21.4} pcbY={0.635} schSectionName="PortPower" schX={7} schY={3} schOrientation="vertical" />
+    <capacitor name="C_U2_OUTA" capacitance="100nF" footprint="0402" pcbX={21} pcbY={1.905} schSectionName="PortPower" schX={13} schY={3} schOrientation="vertical" />
+    <capacitor name="C_U2_OUTB" capacitance="100nF" footprint="0402" pcbX={21} pcbY={-1.905} schSectionName="PortPower" schX={13} schY={-3} schOrientation="vertical" />
+
+    <resistor name="R_SH_UP" resistance="1M" footprint="0402" pcbX={-23.9} pcbY={-4.32} schSectionName="Upstream" schX={-20} schY={-5} />
+    <capacitor name="C_SH_UP" capacitance="4.7nF" footprint="0402" pcbX={-21.8} pcbY={-4.32} schSectionName="Upstream" schX={-18} schY={-5} schOrientation="vertical" />
+    <resistor name="R_SH_D1" resistance="1M" footprint="0402" pcbX={23.9} pcbY={5.68} pcbRotation={180} schSectionName="Output1" schX={20} schY={3} />
+    <capacitor name="C_SH_D1" capacitance="4.7nF" footprint="0402" pcbX={21.8} pcbY={5.68} pcbRotation={180} schSectionName="Output1" schX={18} schY={3} schOrientation="vertical" />
+    <resistor name="R_SH_D2" resistance="1M" footprint="0402" pcbX={23.9} pcbY={-5.68} pcbRotation={180} schSectionName="Output2" schX={20} schY={-13} />
+    <capacitor name="C_SH_D2" capacitance="4.7nF" footprint="0402" pcbX={21.8} pcbY={-5.68} pcbRotation={180} schSectionName="Output2" schX={18} schY={-13} schOrientation="vertical" />
 
     <hole name="H1" diameter="3.2mm" pcbX={-29} pcbY={16} />
     <hole name="H2" diameter="3.2mm" pcbX={15} pcbY={17} />
     <hole name="H3" diameter="3.2mm" pcbX={-29} pcbY={-16} />
     <hole name="H4" diameter="3.2mm" pcbX={15} pcbY={-17} />
 
-    {dataTraces.map(([name, from, to]) => (
-      <group key={name}>
-        <trace name={name} from={from} to={to} thickness="0.18mm" />
+    {usbPairs.map(({ id, connector, dpPin, dmPin, dpY, dmY, dpCrossX, dmCrossX }) => (
+      <group key={`pair-${id}`}>
+        <trace
+          name={`${id}_DP_AB`}
+          from={`${connector}.DP1`}
+          to={`${connector}.DP2`}
+          thickness="0.18mm"
+          pcbRouteHints={[
+            { x: dpCrossX, y: dpY[0], via: true },
+            { x: dpCrossX, y: (dpY[0] + dpY[1]) / 2 },
+            { x: dpCrossX, y: dpY[1], via: true },
+          ]}
+        />
+        <trace
+          name={`${id}_DM_AB`}
+          from={`${connector}.DM1`}
+          to={`${connector}.DM2`}
+          thickness="0.18mm"
+          pcbRouteHints={[
+            { x: dmCrossX, y: dmY[0], via: true },
+            { x: dmCrossX, y: (dmY[0] + dmY[1]) / 2 },
+            { x: dmCrossX, y: dmY[1], via: true },
+          ]}
+        />
+        <trace name={`${id}_DP`} from={`${connector}.DP1`} to={`U1.${dpPin}`} thickness="0.18mm" />
+        <trace name={`${id}_DM`} from={`${connector}.DM1`} to={`U1.${dmPin}`} thickness="0.18mm" />
       </group>
     ))}
+
     {powerTraces.map(([name, from, to]) => (
       <group key={name}>
         <trace name={name} from={from} to={to} thickness="0.8mm" />
       </group>
     ))}
-    {groundTraces.map(([name, from, to]) => (
+    {powerGroundTraces.map(([name, from]) => (
       <group key={name}>
-        <trace name={name} from={from} to={to} thickness="0.15mm" />
+        <trace name={name} from={from} to="net.GND" thickness="0.8mm" />
       </group>
     ))}
-    {hubPowerTraces.map(([name, from, to]) => (
+    {hubDigitalPowerTraces.map(([name, from]) => (
       <group key={name}>
-        <trace name={name} from={from} to={to} thickness="0.35mm" />
+        <trace name={name} from={from} to="net.V3_3" thickness="0.35mm" />
+      </group>
+    ))}
+    {hubAnalogPowerTraces.map(([name, from]) => (
+      <group key={name}>
+        <trace name={name} from={from} to="net.V3_3A" thickness="0.35mm" />
       </group>
     ))}
 
+    <trace name="FERRITE_IN" from="FB1.pin1" to="net.V3_3" thickness="0.35mm" />
+    <trace name="FERRITE_OUT" from="FB1.pin2" to="net.V3_3A" thickness="0.35mm" />
+    <trace name="A3V3_BULK_PWR" from="C_3V3A_BULK.pin1" to="net.V3_3A" thickness="0.35mm" />
+    <trace name="A3V3_BULK_GND" from="C_3V3A_BULK.pin2" to="net.GND" thickness="0.15mm" />
+
+    {/* TEST must be grounded, not floating. */}
+    <trace name="TEST_GND" from="U1.TEST" to="net.GND" thickness="0.15mm" />
+
     <trace name="PWR_EN_A" from="U1.PRTPWR1" to="U2.ENA" thickness="0.15mm" />
     <trace name="PWR_EN_B" from="U1.PRTPWR2" to="U2.ENB" thickness="0.15mm" />
-    <trace name="FAULT_A" from="U1.OCS_N1" to="U2.FLAGA_N" thickness="0.15mm" />
-    <trace name="FAULT_B" from="U1.OCS_N2" to="U2.FLAGB_N" thickness="0.15mm" />
+
+    <trace name="FAULT_A_HUB" from="U1.OCS_N1" to="net.OCS_N1" thickness="0.15mm" />
+    <trace name="FAULT_A_SW" from="U2.FLAGA_N" to="net.OCS_N1" thickness="0.15mm" />
+    <trace name="FAULT_A_PU" from="R_OCS1.pin2" to="net.OCS_N1" thickness="0.15mm" />
+    <trace name="FAULT_A_PU_3V3" from="R_OCS1.pin1" to="net.V3_3" />
+    <trace name="FAULT_B_HUB" from="U1.OCS_N2" to="net.OCS_N2" thickness="0.15mm" />
+    <trace name="FAULT_B_SW" from="U2.FLAGB_N" to="net.OCS_N2" thickness="0.15mm" />
+    <trace name="FAULT_B_PU" from="R_OCS2.pin2" to="net.OCS_N2" thickness="0.15mm" />
+    <trace name="FAULT_B_PU_3V3" from="R_OCS2.pin1" to="net.V3_3" />
 
     <trace name="CC_UP1" from="J_UP.CC1" to="R_CC_UP1.pin1" />
     <trace name="CC_UP1_GND" from="R_CC_UP1.pin2" to="net.GND" thickness="0.15mm" />
     <trace name="CC_UP2" from="J_UP.CC2" to="R_CC_UP2.pin1" />
     <trace name="CC_UP2_GND" from="R_CC_UP2.pin2" to="net.GND" thickness="0.15mm" />
 
+    {/* Rp references the switched port VBUS, so a port only advertises a source
+        while it can actually supply one. */}
     <trace name="CC_D1_1" from="J_D1.CC1" to="R_CC_D1_1.pin1" />
-    <trace name="CC_D1_1_RP" from="R_CC_D1_1.pin2" to="net.V5_SYS" />
+    <trace name="CC_D1_1_RP" from="R_CC_D1_1.pin2" to="net.VBUS_P1" />
     <trace name="CC_D1_2" from="J_D1.CC2" to="R_CC_D1_2.pin1" />
-    <trace name="CC_D1_2_RP" from="R_CC_D1_2.pin2" to="net.V5_SYS" />
+    <trace name="CC_D1_2_RP" from="R_CC_D1_2.pin2" to="net.VBUS_P1" />
     <trace name="CC_D2_1" from="J_D2.CC1" to="R_CC_D2_1.pin1" />
-    <trace name="CC_D2_1_RP" from="R_CC_D2_1.pin2" to="net.V5_SYS" />
+    <trace name="CC_D2_1_RP" from="R_CC_D2_1.pin2" to="net.VBUS_P2" />
     <trace name="CC_D2_2" from="J_D2.CC2" to="R_CC_D2_2.pin1" />
-    <trace name="CC_D2_2_RP" from="R_CC_D2_2.pin2" to="net.V5_SYS" />
+    <trace name="CC_D2_2_RP" from="R_CC_D2_2.pin2" to="net.VBUS_P2" />
 
-    <trace name="VBUS_DIV_IN" from="R_VBUS_HI.pin1" to="net.VBUS_UP" />
-    <trace name="VBUS_DIV_MID_A" from="R_VBUS_HI.pin2" to="net.VBUS_DET" />
-    <trace name="VBUS_DIV_MID_B" from="U1.VBUS_DET" to="net.VBUS_DET" />
-    <trace name="VBUS_DIV_GND" from="R_VBUS_LO.pin1" to="net.VBUS_DET" />
-    <trace name="VBUS_DIV_GND_2" from="R_VBUS_LO.pin2" to="net.GND" thickness="0.15mm" />
+    <trace name="VBUS_DET_PULLUP" from="R_VBUS_DET.pin1" to="net.V3_3" />
+    <trace name="VBUS_DET_PIN" from="R_VBUS_DET.pin2" to="U1.VBUS_DET" />
 
     <trace name="CFG0_PIN" from="U1.CFG_SEL0" to="R_CFG0.pin1" />
     <trace name="CFG0_LOW" from="R_CFG0.pin2" to="net.GND" thickness="0.15mm" />
@@ -606,31 +738,36 @@ const UsbC12Hub = () => (
     <trace name="NONREM1_PIN" from="U1.NON_REM1" to="R_NONREM1.pin1" />
     <trace name="NONREM1_LOW" from="R_NONREM1.pin2" to="net.GND" thickness="0.15mm" />
 
-    <trace name="RESET_PULLUP" from="R_RESET.pin1" to="net.V3_3" />
-    <trace name="RESET_NET_R" from="R_RESET.pin2" to="net.RESET_N" />
+    <trace name="RESET_SUP_OUT" from="U4.RESET_N" to="net.RESET_N" />
     <trace name="RESET_NET_U" from="U1.RESET_N" to="net.RESET_N" />
-    <trace name="RESET_NET_C" from="C_RESET.pin1" to="net.RESET_N" />
-    <trace name="RESET_C_GND" from="C_RESET.pin2" to="net.GND" thickness="0.15mm" />
+    <trace name="RESET_SUP_VCC" from="U4.VCC" to="net.V3_3" />
+    <trace name="RESET_SUP_GND" from="U4.GND" to="net.GND" thickness="0.15mm" />
+    <trace name="RESET_SUP_CAP" from="C_U4.pin1" to="net.V3_3" />
+    <trace name="RESET_SUP_CAP_GND" from="C_U4.pin2" to="net.GND" thickness="0.15mm" />
 
-    <trace name="XTAL_IN" from="U1.XTALIN" to="Y1.pin1" />
-    <trace name="XTAL_IN_C" from="C_XTAL1.pin1" to="Y1.pin1" />
-    <trace name="XTAL_IN_C_GND" from="C_XTAL1.pin2" to="net.GND" thickness="0.15mm" />
-    <trace name="XTAL_OUT" from="U1.XTALOUT" to="Y1.pin2" />
-    <trace name="XTAL_OUT_C" from="C_XTAL2.pin1" to="Y1.pin2" />
-    <trace name="XTAL_OUT_C_GND" from="C_XTAL2.pin2" to="net.GND" thickness="0.15mm" />
+    <trace name="XTAL_OUT" from="U1.XTALOUT" to="Y1.pin1" />
+    <trace name="XTAL_OUT_C" from="C_XTAL1.pin1" to="Y1.pin1" />
+    <trace name="XTAL_OUT_C_GND" from="C_XTAL1.pin2" to="net.GND" thickness="0.15mm" />
+    <trace name="XTAL_IN" from="U1.XTALIN" to="Y1.pin2" />
+    <trace name="XTAL_IN_C" from="C_XTAL2.pin1" to="Y1.pin2" />
+    <trace name="XTAL_IN_C_GND" from="C_XTAL2.pin2" to="net.GND" thickness="0.15mm" />
     <trace name="RBIAS_PIN" from="U1.RBIAS" to="R_RBIAS.pin1" />
     <trace name="RBIAS_GND" from="R_RBIAS.pin2" to="net.GND" thickness="0.15mm" />
-    <trace name="CRFILT_PIN" from="U1.CRFILT" to="C_CRFILT.pin1" />
-    <trace name="CRFILT_GND" from="C_CRFILT.pin2" to="net.GND" thickness="0.15mm" />
-    <trace name="PLLFILT_PIN" from="U1.PLLFILT" to="C_PLLFILT.pin1" />
-    <trace name="PLLFILT_GND" from="C_PLLFILT.pin2" to="net.GND" thickness="0.15mm" />
+
+    {[
+      ["CRFILT", "C_CRFILT_HF", "C_CRFILT"],
+      ["PLLFILT", "C_PLLFILT_HF", "C_PLLFILT"],
+    ].map(([pin, hfCap, bulkCap]) => (
+      <group key={`filt-${pin}`}>
+        <trace name={`${pin}_HF`} from={`U1.${pin}`} to={`${hfCap}.pin1`} />
+        <trace name={`${pin}_HF_GND`} from={`${hfCap}.pin2`} to="net.GND" thickness="0.15mm" />
+        <trace name={`${pin}_BULK`} from={`U1.${pin}`} to={`${bulkCap}.pin1`} />
+        <trace name={`${pin}_BULK_GND`} from={`${bulkCap}.pin2`} to="net.GND" thickness="0.15mm" />
+      </group>
+    ))}
 
     {[
       "C_3V3_BULK",
-      "C_VDDA1",
-      "C_VDDA2",
-      "C_VDDA3",
-      "C_VDDA4",
       "C_VDD1",
       "C_VDD2",
     ].map((name) => (
@@ -639,16 +776,28 @@ const UsbC12Hub = () => (
         <trace name={`${name}_GND`} from={`${name}.pin2`} to="net.GND" thickness="0.15mm" />
       </group>
     ))}
+    {[
+      "C_VDDA1",
+      "C_VDDA2",
+      "C_VDDA3",
+      "C_VDDA4",
+    ].map((name) => (
+      <group key={name}>
+        <trace name={`${name}_PWR`} from={`${name}.pin1`} to="net.V3_3A" />
+        <trace name={`${name}_GND`} from={`${name}.pin2`} to="net.GND" thickness="0.15mm" />
+      </group>
+    ))}
+
     <trace name="VBUS_CAP_PWR" from="C_VBUS.pin1" to="net.V5_SYS" thickness="0.5mm" />
-    <trace name="VBUS_CAP_GND" from="C_VBUS.pin2" to="net.GND" thickness="0.15mm" />
+    <trace name="VBUS_CAP_GND" from="C_VBUS.pin2" to="net.GND" thickness="0.5mm" />
     <trace name="LDO_CAP_PWR" from="C_LDO_OUT.pin1" to="net.V3_3" />
     <trace name="LDO_CAP_GND" from="C_LDO_OUT.pin2" to="net.GND" thickness="0.15mm" />
     <trace name="P1_CAP_PWR" from="C_PORT1.pin1" to="net.VBUS_P1" thickness="0.5mm" />
-    <trace name="P1_CAP_GND" from="C_PORT1.pin2" to="net.GND" thickness="0.15mm" />
+    <trace name="P1_CAP_GND" from="C_PORT1.pin2" to="net.GND" thickness="0.5mm" />
     <trace name="P2_CAP_PWR" from="C_PORT2.pin1" to="net.VBUS_P2" thickness="0.5mm" />
-    <trace name="P2_CAP_GND" from="C_PORT2.pin2" to="net.GND" thickness="0.15mm" />
+    <trace name="P2_CAP_GND" from="C_PORT2.pin2" to="net.GND" thickness="0.5mm" />
     <trace name="U2_IN_BULK_PWR" from="C_U2_IN_BULK.pin1" to="net.V5_SYS" thickness="0.5mm" />
-    <trace name="U2_IN_BULK_GND" from="C_U2_IN_BULK.pin2" to="net.GND" thickness="0.15mm" />
+    <trace name="U2_IN_BULK_GND" from="C_U2_IN_BULK.pin2" to="net.GND" thickness="0.5mm" />
     <trace name="U2_IN_BYPASS_PWR" from="C_U2_IN.pin1" to="net.V5_SYS" />
     <trace name="U2_IN_BYPASS_GND" from="C_U2_IN.pin2" to="net.GND" thickness="0.15mm" />
     <trace name="U2_OUTA_BYPASS_PWR" from="C_U2_OUTA.pin1" to="net.VBUS_P1" />

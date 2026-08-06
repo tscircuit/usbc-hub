@@ -18,7 +18,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "tscircuit": "latest",
+    "tscircuit": "0.0.2242",
     "typescript": "^5.0.0"
   }
 }
