@@ -1,0 +1,45 @@
+name: CI
+
+# Only main on push; PR branches are already covered by the pull_request
+# trigger, and running both duplicates every job.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      # Routing took 237s on a GitHub runner against the 240s default, so the
+      # timeout is set well clear of it. A timeout here is not just a failure:
+      # tscircuit writes a very large debug artifact when the autorouter times
+      # out.
+      - name: Build circuit
+        run: bunx tsci build index.circuit.tsx --disable-parts-engine --autorouter-timeout 600s
+
+      # Schematic only. The PCB snapshot contains autorouted geometry, which is
+      # not reproducible across machines - the committed snapshot generated on
+      # macOS does not match the route the same tscircuit version produces on
+      # Linux. Connectivity and DRC are covered by the build step above; the
+      # committed PCB snapshot is a visual reference, not a gate. Enforcing it
+      # would need the route frozen via pcbRouteCache, which is not worth doing
+      # while CHECKLIST.md still calls for replacing the autoroute by hand.
+      - name: Check schematic snapshot
+        run: bunx tsci snapshot --schematic-only
