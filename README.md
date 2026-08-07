@@ -12,6 +12,7 @@ This tscircuit project is a compact USB 2.0 High-Speed hub with one upstream USB
 - MIC809 push-pull reset supervisor on `RESET_N`
 - AP2176S dual current-limited downstream power switch, with pull-ups on its
   open-drain fault outputs
+- USBLC6-2SC6 low-capacitance ESD protection at all three USB connectors
 - USB-C upstream `Rd` resistors (5.1 kOhm)
 - USB-C downstream default-current `Rp` resistors (56 kOhm), referenced to the
   switched port VBUS
@@ -64,6 +65,9 @@ baseline; fabrication still requires a controlled-impedance layout review.
 - The USB2512B exposed pad is the only IC ground connection. The footprint uses a
   five-via thermal array tied to the bottom GND pour; confirm the via drill,
   solder-mask, and paste strategy with the assembler.
+- The AP2176 SO-8 mapping follows the manufacturer data sheet: `OUTA`, `IN`,
+  `OUTB`, `GND`, `FLAGA_N`, `FLAGB_N`, `ENB`, `ENA`; its active-high enables and
+  open-drain faults connect to the USB2512B.
 - C_XTAL1/C_XTAL2 are 18 pF starting values for the specified 12 pF crystal load.
   Recalculate them from the selected crystal's C0 and board stray capacitance
   before release.
@@ -72,10 +76,10 @@ baseline; fabrication still requires a controlled-impedance layout review.
   in DS00004539. The 500 mA upstream fuse still limits the whole bus-powered
   design, and the AP2176 per-port current limit is not an aggregate two-port
   budget; verify worst-case hub and downstream load current before fabrication.
-- No external USB ESD/EMI protection is fitted yet. Add and route suitable
-  protection at all three connectors, then recheck connector part numbers,
-  footprint dimensions, component availability, USB inrush, thermal behavior, and
-  USB-IF compliance.
+- USBLC6-2SC6 protection is now present at all three connectors, with each
+  device's VBUS and GND returns connected. Final connector-to-protector
+  placement, branch-free high-speed routing, SI/EMI validation, and any
+  common-mode choke decision remain open.
 
 ## References
 

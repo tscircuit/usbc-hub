@@ -2,6 +2,7 @@ Quantity,References,Value or part,Footprint,Notes
 3,"J_UP J_D1 J_D2",HRO TYPE-C-31-M-12,Custom 16-pin USB-C,One upstream and two downstream receptacles
 1,U1,USB2512B/M2,36-pin SQFN 6x6 mm,USB 2.0 two-port hub controller
 1,U2,AP2176SG-13,SOIC-8,Dual current-limited port power switch; the USB2512B requires the active-high-enable variant
+3,"D_ESD_UP D_ESD_D1 D_ESD_D2",USBLC6-2SC6,SOT23-6L,"USB 2.0 high-speed ESD protection; JLCPCB C2687116; pin 5 to the corresponding VBUS rail and pin 2 to GND"
 1,U3,AP2112K-3.3TRG1,SOT-23-5,3.3 V LDO
 1,U4,MIC809SUY-TR,SOT-23-3,"Push-pull active-low reset supervisor, 2.93 V threshold, 140 ms; DS00004539 rules out an RC reset"
 1,Y1,24 MHz crystal,Custom 2-pad SMD,Use a crystal within the USB2512B clock tolerance

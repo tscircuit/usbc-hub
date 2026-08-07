@@ -10,7 +10,7 @@ in advance.
 ## Already verified
 
 - [x] TypeScript typecheck passes.
-- [x] `tsci build` completes with 141 routed traces, no jumpers, and no router errors.
+- [x] `tsci build` completes with 153 routed traces, no jumpers, and no router errors.
 - [x] Generated build DRC contains no errors or warnings, including the placement
       DRC (courtyard overlaps, board-edge and mounting-hole clearance).
 - [x] `tsci check shorts index.circuit.tsx` reports no shorts.

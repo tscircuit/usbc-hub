@@ -1,3 +1,5 @@
+import { USBLC6_2SC6 } from "./imports/USBLC6_2SC6"
+
 const usb2512bPinLabels = {
   pin1: ["USBDM_DN1", "D1N"],
   pin2: ["USBDP_DN1", "D1P"],
@@ -322,14 +324,14 @@ const Ap2176s = (props: any) => (
     manufacturerPartNumber="AP2176SG-13"
     footprint="soic8"
     pinLabels={{
-      pin1: "ENA",
-      pin2: "FLAGA_N",
-      pin3: "FLAGB_N",
-      pin4: "ENB",
-      pin5: "OUTB",
-      pin6: "GND",
-      pin7: "IN",
-      pin8: "OUTA",
+      pin1: "OUTA",
+      pin2: "IN",
+      pin3: "OUTB",
+      pin4: "GND",
+      pin5: "FLAGA_N",
+      pin6: "FLAGB_N",
+      pin7: "ENB",
+      pin8: "ENA",
     }}
     pinAttributes={{
       IN: { requiresPower: true },
@@ -451,6 +453,24 @@ const hubAnalogPowerTraces = [
   ["HUB_VDDA4", "U1.VDDA33_4"],
 ] as const
 
+const esdTraces = [
+  ["ESD_UP_VBUS", "D_ESD_UP.VBUS", "net.VBUS_UP"],
+  ["ESD_UP_GND", "D_ESD_UP.GND", "net.GND"],
+  ["ESD_D1_VBUS", "D_ESD_D1.VBUS", "net.VBUS_P1"],
+  ["ESD_D1_GND", "D_ESD_D1.GND", "net.GND"],
+  ["ESD_D2_VBUS", "D_ESD_D2.VBUS", "net.VBUS_P2"],
+  ["ESD_D2_GND", "D_ESD_D2.GND", "net.GND"],
+] as const
+
+const esdSignalTraces = [
+  ["ESD_UP_DP", "J_UP.DP1", "D_ESD_UP.IO1_IN"],
+  ["ESD_UP_DM", "J_UP.DM1", "D_ESD_UP.IO2_IN"],
+  ["ESD_D1_DP", "J_D1.DP1", "D_ESD_D1.IO1_IN"],
+  ["ESD_D1_DM", "J_D1.DM1", "D_ESD_D1.IO2_IN"],
+  ["ESD_D2_DP", "J_D2.DP1", "D_ESD_D2.IO1_IN"],
+  ["ESD_D2_DM", "J_D2.DM1", "D_ESD_D2.IO2_IN"],
+] as const
+
 const UsbC12Hub = () => (
   <board
     title="USB-C 1-to-2 USB 2.0 Hub"
@@ -508,6 +528,34 @@ const UsbC12Hub = () => (
       schSectionName="Output2"
       schX={20}
       schY={-8}
+    />
+
+    <USBLC6_2SC6
+      name="D_ESD_UP"
+      pcbX={-22}
+      pcbY={0}
+      pcbRotation={90}
+      schSectionName="Upstream"
+      schX={-16}
+      schY={-8}
+    />
+    <USBLC6_2SC6
+      name="D_ESD_D1"
+      pcbX={20}
+      pcbY={10}
+      pcbRotation={270}
+      schSectionName="Output1"
+      schX={16}
+      schY={13}
+    />
+    <USBLC6_2SC6
+      name="D_ESD_D2"
+      pcbX={20}
+      pcbY={-10}
+      pcbRotation={270}
+      schSectionName="Output2"
+      schX={16}
+      schY={-13}
     />
 
     {/*
@@ -670,6 +718,23 @@ const UsbC12Hub = () => (
         />
         <trace name={`${id}_DP`} from={`${connector}.DP1`} to={`U1.${dpPin}`} thickness="0.18mm" />
         <trace name={`${id}_DM`} from={`${connector}.DM1`} to={`U1.${dmPin}`} thickness="0.18mm" />
+      </group>
+    ))}
+
+    {esdSignalTraces.map(([name, from, to]) => (
+      <group key={name}>
+        <trace name={name} from={from} to={to} thickness="0.18mm" />
+      </group>
+    ))}
+
+    {esdTraces.map(([name, from, to]) => (
+      <group key={name}>
+        <trace
+          name={name}
+          from={from}
+          to={to}
+          thickness={name.endsWith("VBUS") ? "0.5mm" : "0.15mm"}
+        />
       </group>
     ))}
 
