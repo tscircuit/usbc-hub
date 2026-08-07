@@ -1,22 +1,23 @@
 Quantity,References,Value or part,Footprint,Notes
 3,"J_UP J_D1 J_D2",HRO TYPE-C-31-M-12,Custom 16-pin USB-C,One upstream and two downstream receptacles
 1,U1,USB2512B/M2,36-pin SQFN 6x6 mm,USB 2.0 two-port hub controller
-1,U2,AP2176SG-13,SOIC-8,Dual current-limited port power switch
+1,U2,AP2176SG-13,SOIC-8,Dual current-limited port power switch; the USB2512B requires the active-high-enable variant
 1,U3,AP2112K-3.3TRG1,SOT-23-5,3.3 V LDO
-3,"D_ESD_UP D_ESD_D1 D_ESD_D2",USBLC6-2SC6,SOT23-6L,"USB 2.0 high-speed ESD protection; JLCPCB C2687116; pin 5 to the corresponding VBUS rail and pin 2 to GND"
+1,U4,MIC809SUY-TR,SOT-23-3,"Push-pull active-low reset supervisor, 2.93 V threshold, 140 ms; DS00004539 rules out an RC reset"
 1,Y1,24 MHz crystal,Custom 2-pad SMD,Use a crystal within the USB2512B clock tolerance
-2,"C_XTAL1 C_XTAL2",18 pF,0402,"Starting value for Y1 with CL=12 pF; recalculate from the selected crystal's C0 and PCB stray capacitance"
+1,FB1,BLM18PG601SN1D,0603,"Ferrite bead isolating VDDA33 from VDD33 per DS00004539; confirm the DC rating covers the hub analog supply current"
+2,"C_XTAL1 C_XTAL2",18 pF,0402,"Inside the 15-33 pF window in DS00004539; recalculate from the selected crystal's CL, C0 and PCB stray capacitance"
 1,F1,500 mA resettable fuse,1206,Protects the bus-powered input
 2,"R_CC_UP1 R_CC_UP2",5.1 kOhm,0402,USB-C upstream Rd
-4,"R_CC_D1_1 R_CC_D1_2 R_CC_D2_1 R_CC_D2_2",56 kOhm,0402,USB-C downstream default-current Rp
-5,"R_VBUS_HI R_VBUS_LO R_CFG0 R_NONREM0 R_NONREM1",100 kOhm,0402,VBUS divider and low straps
-2,"R_RESET R_CFG1",10 kOhm,0402,Reset pull-up and CFG_SEL1 high strap
+4,"R_CC_D1_1 R_CC_D1_2 R_CC_D2_1 R_CC_D2_2",56 kOhm,0402,"USB-C downstream default-current Rp, referenced to the switched port VBUS"
+3,"R_CFG0 R_NONREM0 R_NONREM1",100 kOhm,0402,Strap pins pulled low; DS00004539 specifies 100 kOhm to digital ground
+4,"R_CFG1 R_VBUS_DET R_OCS1 R_OCS2",10 kOhm,0402,"CFG_SEL1 high strap, VBUS_DET series resistor to VDD33, and two pull-ups for the open-drain AP2176 FLGx outputs"
 1,R_RBIAS,12 kOhm 1%,0402,USB transceiver bias
 3,"R_SH_UP R_SH_D1 R_SH_D2",1 MOhm,0402,Shield-to-ground RC network
-1,C_VBUS,4.7 uF,0603,Upstream/system bulk capacitance
-3,"C_LDO_OUT C_3V3_BULK C_RESET",1 uF,0603,LDO output bulk and reset delay
-8,"C_VDDA1 C_VDDA2 C_VDDA3 C_VDDA4 C_VDD1 C_VDD2 C_CRFILT C_PLLFILT",100 nF,0402,Hub decoupling and regulator filters
+1,C_VBUS,4.7 uF,0603,System bulk on V5_SYS
+1,C_U2_IN_BULK,4.7 uF,0805,"AP2176 input bulk; sized so unswitched V5_SYS bulk totals 9.4 uF, under the USB-IF 10 uF inrush limit"
+3,"C_LDO_OUT C_3V3_BULK C_3V3A_BULK",1 uF,0603,LDO output bulk plus bulk on each side of FB1
+12,"C_VDDA1 C_VDDA2 C_VDDA3 C_VDDA4 C_VDD1 C_VDD2 C_CRFILT C_PLLFILT C_U2_IN C_U2_OUTA C_U2_OUTB C_U4",100 nF,0402,"One per hub supply pin, CRFILT/PLLFILT bulk, AP2176 bypass, and supervisor decoupling"
+2,"C_CRFILT_HF C_PLLFILT_HF",10 nF,0402,"CRFILT/PLLFILT high-frequency bypass; DS00004539 asks for a 0.01 uF cap alongside the >=0.1 uF low-ESR bulk"
 2,"C_PORT1 C_PORT2",10 uF,0805,Downstream port bulk capacitance
-1,C_U2_IN_BULK,10 uF,0805,AP2176 input bulk capacitor placed next to U2
-3,"C_U2_IN C_U2_OUTA C_U2_OUTB",100 nF,0402,AP2176 local high-frequency bypass capacitors
 3,"C_SH_UP C_SH_D1 C_SH_D2",4.7 nF,0402,Shield-to-ground RC network
