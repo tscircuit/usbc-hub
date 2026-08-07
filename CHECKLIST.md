@@ -10,6 +10,10 @@ in advance.
 ## Already verified
 
 - [x] TypeScript typecheck passes.
+- [x] Schematic sections were repacked with tscircuit 0.0.2257. The upstream,
+      downstream, and power sections use automatic packing; the dense hub
+      controller reference network remains intentionally anchored as one
+      readable block. The fresh schematic export has no layout errors.
 - [x] `tsci build` completes with 183 routed traces, no jumpers, and no router
       errors. The PCB JSON contains zero `pcb_trace_error`,
       `pcb_placement_error`, and `pcb_autorouting_error` records.

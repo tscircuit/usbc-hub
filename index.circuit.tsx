@@ -572,8 +572,6 @@ const UsbC12Hub = () => (
       pcbY={0}
       pcbRotation={90}
       schSectionName="Upstream"
-      schX={-20}
-      schY={0}
     />
     <UsbC16
       name="J_D1"
@@ -581,8 +579,6 @@ const UsbC12Hub = () => (
       pcbY={10}
       pcbRotation={270}
       schSectionName="Output1"
-      schX={20}
-      schY={8}
     />
     <UsbC16
       name="J_D2"
@@ -590,8 +586,6 @@ const UsbC12Hub = () => (
       pcbY={-10}
       pcbRotation={270}
       schSectionName="Output2"
-      schX={20}
-      schY={-8}
     />
 
     <USBLC6_2SC6
@@ -600,8 +594,6 @@ const UsbC12Hub = () => (
       pcbY={0}
       pcbRotation={90}
       schSectionName="Upstream"
-      schX={-16}
-      schY={-8}
     />
     <USBLC6_2SC6
       name="D_ESD_D1"
@@ -609,8 +601,6 @@ const UsbC12Hub = () => (
       pcbY={10}
       pcbRotation={270}
       schSectionName="Output1"
-      schX={16}
-      schY={13}
     />
     <USBLC6_2SC6
       name="D_ESD_D2"
@@ -618,8 +608,6 @@ const UsbC12Hub = () => (
       pcbY={-10}
       pcbRotation={270}
       schSectionName="Output2"
-      schX={16}
-      schY={-13}
     />
 
     {/*
@@ -628,15 +616,17 @@ const UsbC12Hub = () => (
       unrotated orientation the downstream pins pointed back at the upstream
       connector, which is what forced the 35-52 mm high-speed detours.
     */}
+    {/* Keep the dense hub-controller reference network as one readable block;
+        the other schematic sections are left to tscircuit's auto-packer. */}
     <Usb2512B name="U1" pcbX={0} pcbY={0} pcbRotation={180} schSectionName="Hub" schX={0} schY={0} />
-    <Ap2166s name="U2" pcbX={17} pcbY={0} schSectionName="PortPower" schX={10} schY={0} />
-    <TUSB319Q1 name="U5" pcbX={16.5} pcbY={13} pcbRotation={270} schSectionName="Output1" schX={12} schY={13} />
-    <TUSB319Q1 name="U6" pcbX={16.5} pcbY={-13} pcbRotation={270} schSectionName="Output2" schX={12} schY={-13} />
-    <Nmos2N7002 name="Q_EN_D1" pcbX={18.5} pcbY={16.5} pcbRotation={90} schSectionName="Output1" schX={8} schY={15} />
-    <Nmos2N7002 name="Q_EN_D2" pcbX={18.5} pcbY={-16.5} pcbRotation={270} schSectionName="Output2" schX={8} schY={-15} />
-    <Nmos2N7002 name="Q_DIS_D1" pcbX={20.5} pcbY={18.5} pcbRotation={90} schSectionName="Output1" schX={12} schY={17} />
-    <Nmos2N7002 name="Q_DIS_D2" pcbX={20.5} pcbY={-18.5} pcbRotation={270} schSectionName="Output2" schX={12} schY={-17} />
-    <Ap2112k33 name="U3" pcbX={-15} pcbY={8} schSectionName="Power" schX={-10} schY={12} />
+    <Ap2166s name="U2" pcbX={17} pcbY={0} schSectionName="PortPower" />
+    <TUSB319Q1 name="U5" pcbX={16.5} pcbY={13} pcbRotation={270} schSectionName="Output1" />
+    <TUSB319Q1 name="U6" pcbX={16.5} pcbY={-13} pcbRotation={270} schSectionName="Output2" />
+    <Nmos2N7002 name="Q_EN_D1" pcbX={18.5} pcbY={16.5} pcbRotation={90} schSectionName="Output1" />
+    <Nmos2N7002 name="Q_EN_D2" pcbX={18.5} pcbY={-16.5} pcbRotation={270} schSectionName="Output2" />
+    <Nmos2N7002 name="Q_DIS_D1" pcbX={20.5} pcbY={18.5} pcbRotation={90} schSectionName="Output1" />
+    <Nmos2N7002 name="Q_DIS_D2" pcbX={20.5} pcbY={-18.5} pcbRotation={270} schSectionName="Output2" />
+    <Ap2112k33 name="U3" pcbX={-15} pcbY={8} schSectionName="Power" />
     <Mic809 name="U4" pcbX={-8} pcbY={-1} pcbRotation={180} schSectionName="Hub" schX={-7} schY={-4} />
 
     <fuse
@@ -647,8 +637,6 @@ const UsbC12Hub = () => (
       pcbX={-24}
       pcbY={8}
       schSectionName="Power"
-      schX={-14}
-      schY={12}
     />
 
     {/* Analog supply ferrite, with bulk on both sides per DS00004539. */}
@@ -660,8 +648,6 @@ const UsbC12Hub = () => (
       pcbX={-8}
       pcbY={4.5}
       schSectionName="Power"
-      schX={-4}
-      schY={12}
     />
 
     <crystal
@@ -698,16 +684,16 @@ const UsbC12Hub = () => (
     <capacitor name="C_XTAL1" capacitance="18pF" footprint="0402" pcbX={-2.1} pcbY={-6.1} pcbRotation={180} schSectionName="Hub" schX={-2.5} schY={-10} schOrientation="vertical" />
     <capacitor name="C_XTAL2" capacitance="18pF" footprint="0402" pcbX={4.5} pcbY={-6.7} schSectionName="Hub" schX={2.5} schY={-10} schOrientation="vertical" />
 
-    <resistor name="R_CC_UP1" resistance="5.1k" footprint="0402" pcbX={-23.9} pcbY={-3.2} schSectionName="Upstream" schX={-16} schY={1} />
-    <resistor name="R_CC_UP2" resistance="5.1k" footprint="0402" pcbX={-23.9} pcbY={3.2} schSectionName="Upstream" schX={-16} schY={-1} />
-    <resistor name="R_ID_D1" resistance="200k" footprint="0402" pcbX={12.8} pcbY={10.8} pcbRotation={90} schSectionName="Output1" schX={10} schY={12} />
-    <resistor name="R_ID_D2" resistance="200k" footprint="0402" pcbX={12.8} pcbY={-10.8} pcbRotation={270} schSectionName="Output2" schX={10} schY={-12} />
-    <resistor name="R_EN_D1" resistance="200k" footprint="0402" pcbX={21} pcbY={14.5} pcbRotation={90} schSectionName="Output1" schX={18.5} schY={14} />
-    <resistor name="R_EN_D2" resistance="200k" footprint="0402" pcbX={21} pcbY={-14.5} pcbRotation={270} schSectionName="Output2" schX={18.5} schY={-14} />
-    <resistor name="R_VBUS_D1" resistance="900k" footprint="0402" pcbX={14.2} pcbY={10.8} pcbRotation={90} schSectionName="Output1" schX={20} schY={12} />
-    <resistor name="R_VBUS_D2" resistance="900k" footprint="0402" pcbX={14.2} pcbY={-10.8} pcbRotation={270} schSectionName="Output2" schX={20} schY={-12} />
-    <resistor name="R_DIS_D1" resistance="1k" footprint="0402" pcbX={26.2} pcbY={19} pcbRotation={90} schSectionName="Output1" schX={16} schY={17} />
-    <resistor name="R_DIS_D2" resistance="1k" footprint="0402" pcbX={26.2} pcbY={-19} pcbRotation={270} schSectionName="Output2" schX={16} schY={-17} />
+    <resistor name="R_CC_UP1" resistance="5.1k" footprint="0402" pcbX={-23.9} pcbY={-3.2} schSectionName="Upstream" />
+    <resistor name="R_CC_UP2" resistance="5.1k" footprint="0402" pcbX={-23.9} pcbY={3.2} schSectionName="Upstream" />
+    <resistor name="R_ID_D1" resistance="200k" footprint="0402" pcbX={12.8} pcbY={10.8} pcbRotation={90} schSectionName="Output1" />
+    <resistor name="R_ID_D2" resistance="200k" footprint="0402" pcbX={12.8} pcbY={-10.8} pcbRotation={270} schSectionName="Output2" />
+    <resistor name="R_EN_D1" resistance="200k" footprint="0402" pcbX={21} pcbY={14.5} pcbRotation={90} schSectionName="Output1" />
+    <resistor name="R_EN_D2" resistance="200k" footprint="0402" pcbX={21} pcbY={-14.5} pcbRotation={270} schSectionName="Output2" />
+    <resistor name="R_VBUS_D1" resistance="900k" footprint="0402" pcbX={14.2} pcbY={10.8} pcbRotation={90} schSectionName="Output1" />
+    <resistor name="R_VBUS_D2" resistance="900k" footprint="0402" pcbX={14.2} pcbY={-10.8} pcbRotation={270} schSectionName="Output2" />
+    <resistor name="R_DIS_D1" resistance="1k" footprint="0402" pcbX={26.2} pcbY={19} pcbRotation={90} schSectionName="Output1" />
+    <resistor name="R_DIS_D2" resistance="1k" footprint="0402" pcbX={26.2} pcbY={-19} pcbRotation={270} schSectionName="Output2" />
 
     {/* Bus-powered mode: VBUS_DET is tied to VDD33 through a series resistor
         (DS00004539 allows 820 ohm - 10 kohm), not to a divider off VBUS. */}
@@ -720,15 +706,15 @@ const UsbC12Hub = () => (
 
     {/* AP2166 FLGx are open-drain (DS31814 Fig. "Typical Applications Circuit"
         shows 10 k pull-ups); OCS_Nx would otherwise read a permanent fault. */}
-    <resistor name="R_OCS1" resistance="10k" footprint="0402" pcbX={1.6} pcbY={6.7} pcbRotation={90} schSectionName="PortPower" schX={5} schY={3} />
-    <resistor name="R_OCS2" resistance="10k" footprint="0402" pcbX={3} pcbY={6.7} pcbRotation={90} schSectionName="PortPower" schX={5} schY={-3} />
+    <resistor name="R_OCS1" resistance="10k" footprint="0402" pcbX={1.6} pcbY={6.7} pcbRotation={90} schSectionName="PortPower" />
+    <resistor name="R_OCS2" resistance="10k" footprint="0402" pcbX={3} pcbY={6.7} pcbRotation={90} schSectionName="PortPower" />
 
     {/* Unswitched bulk on V5_SYS is held to 9.4 uF so the upstream port stays
         inside the USB-IF 10 uF inrush limit quoted in DS00004539. */}
-    <capacitor name="C_VBUS" capacitance="4.7uF" footprint="0603" pcbX={-19.1} pcbY={8.95} pcbRotation={180} schSectionName="Power" schX={-14} schY={9} schOrientation="vertical" />
-    <capacitor name="C_LDO_OUT" capacitance="1uF" footprint="0603" pcbX={-11.1} pcbY={8.95} schSectionName="Power" schX={-8} schY={10} schOrientation="vertical" />
-    <capacitor name="C_3V3_BULK" capacitance="1uF" footprint="0603" pcbX={-11.5} pcbY={4.5} pcbRotation={180} schSectionName="Power" schX={-6} schY={12} schOrientation="vertical" />
-    <capacitor name="C_3V3A_BULK" capacitance="1uF" footprint="0603" pcbX={-4.8} pcbY={4.5} schSectionName="Power" schX={-2} schY={12} schOrientation="vertical" />
+    <capacitor name="C_VBUS" capacitance="4.7uF" footprint="0603" pcbX={-19.1} pcbY={8.95} pcbRotation={180} schSectionName="Power" schOrientation="vertical" />
+    <capacitor name="C_LDO_OUT" capacitance="1uF" footprint="0603" pcbX={-11.1} pcbY={8.95} schSectionName="Power" schOrientation="vertical" />
+    <capacitor name="C_3V3_BULK" capacitance="1uF" footprint="0603" pcbX={-11.5} pcbY={4.5} pcbRotation={180} schSectionName="Power" schOrientation="vertical" />
+    <capacitor name="C_3V3A_BULK" capacitance="1uF" footprint="0603" pcbX={-4.8} pcbY={4.5} schSectionName="Power" schOrientation="vertical" />
 
     {/* One decoupling capacitor per supply pin, on the pin's own edge. */}
     <capacitor name="C_VDDA1" capacitance="100nF" footprint="0402" pcbX={4.9} pcbY={1.3} schSectionName="Hub" schX={-6} schY={8} schOrientation="vertical" />
@@ -750,21 +736,21 @@ const UsbC12Hub = () => (
     {/* TI's TUSB319-Q1 DFP reference design calls for at least 120 uF of
         downstream VBUS bulk. 150 uF is the nominal target; voltage rating,
         DC-bias derating, and inrush still need a final supplier-qualified part. */}
-    <capacitor name="C_PORT1" capacitance="150uF" footprint="1210" pcbX={23.8} pcbY={17.5} pcbRotation={90} schSectionName="Output1" schX={16} schY={6} schOrientation="vertical" />
-    <capacitor name="C_PORT2" capacitance="150uF" footprint="1210" pcbX={23.8} pcbY={-17.5} pcbRotation={270} schSectionName="Output2" schX={16} schY={-10} schOrientation="vertical" />
-    <capacitor name="C_TC_D1" capacitance="100nF" footprint="0402" pcbX={14.1} pcbY={13.8} pcbRotation={90} schSectionName="Output1" schX={10} schY={11} schOrientation="vertical" />
-    <capacitor name="C_TC_D2" capacitance="100nF" footprint="0402" pcbX={14.1} pcbY={-13.8} pcbRotation={270} schSectionName="Output2" schX={10} schY={-11} schOrientation="vertical" />
-    <capacitor name="C_U2_IN_BULK" capacitance="4.7uF" footprint="0805" pcbX={21.6} pcbY={3.6} schSectionName="PortPower" schX={7} schY={-3} schOrientation="vertical" />
-    <capacitor name="C_U2_IN" capacitance="100nF" footprint="0402" pcbX={21.4} pcbY={0.635} schSectionName="PortPower" schX={7} schY={3} schOrientation="vertical" />
-    <capacitor name="C_U2_OUTA" capacitance="100nF" footprint="0402" pcbX={21} pcbY={1.905} schSectionName="PortPower" schX={13} schY={3} schOrientation="vertical" />
-    <capacitor name="C_U2_OUTB" capacitance="100nF" footprint="0402" pcbX={21} pcbY={-1.905} schSectionName="PortPower" schX={13} schY={-3} schOrientation="vertical" />
+    <capacitor name="C_PORT1" capacitance="150uF" footprint="1210" pcbX={23.8} pcbY={17.5} pcbRotation={90} schSectionName="Output1" schOrientation="vertical" />
+    <capacitor name="C_PORT2" capacitance="150uF" footprint="1210" pcbX={23.8} pcbY={-17.5} pcbRotation={270} schSectionName="Output2" schOrientation="vertical" />
+    <capacitor name="C_TC_D1" capacitance="100nF" footprint="0402" pcbX={14.1} pcbY={13.8} pcbRotation={90} schSectionName="Output1" schOrientation="vertical" />
+    <capacitor name="C_TC_D2" capacitance="100nF" footprint="0402" pcbX={14.1} pcbY={-13.8} pcbRotation={270} schSectionName="Output2" schOrientation="vertical" />
+    <capacitor name="C_U2_IN_BULK" capacitance="4.7uF" footprint="0805" pcbX={21.6} pcbY={3.6} schSectionName="PortPower" schOrientation="vertical" />
+    <capacitor name="C_U2_IN" capacitance="100nF" footprint="0402" pcbX={21.4} pcbY={0.635} schSectionName="PortPower" schOrientation="vertical" />
+    <capacitor name="C_U2_OUTA" capacitance="100nF" footprint="0402" pcbX={21} pcbY={1.905} schSectionName="PortPower" schOrientation="vertical" />
+    <capacitor name="C_U2_OUTB" capacitance="100nF" footprint="0402" pcbX={21} pcbY={-1.905} schSectionName="PortPower" schOrientation="vertical" />
 
-    <resistor name="R_SH_UP" resistance="1M" footprint="0402" pcbX={-23.9} pcbY={-4.32} schSectionName="Upstream" schX={-20} schY={-5} />
-    <capacitor name="C_SH_UP" capacitance="4.7nF" footprint="0402" pcbX={-21.8} pcbY={-4.32} schSectionName="Upstream" schX={-18} schY={-5} schOrientation="vertical" />
-    <resistor name="R_SH_D1" resistance="1M" footprint="0402" pcbX={23.9} pcbY={5.68} pcbRotation={180} schSectionName="Output1" schX={20} schY={3} />
-    <capacitor name="C_SH_D1" capacitance="4.7nF" footprint="0402" pcbX={24.8} pcbY={4} pcbRotation={180} schSectionName="Output1" schX={18} schY={3} schOrientation="vertical" />
-    <resistor name="R_SH_D2" resistance="1M" footprint="0402" pcbX={23.9} pcbY={-5.68} pcbRotation={180} schSectionName="Output2" schX={20} schY={-13} />
-    <capacitor name="C_SH_D2" capacitance="4.7nF" footprint="0402" pcbX={24.8} pcbY={-4} pcbRotation={180} schSectionName="Output2" schX={18} schY={-13} schOrientation="vertical" />
+    <resistor name="R_SH_UP" resistance="1M" footprint="0402" pcbX={-23.9} pcbY={-4.32} schSectionName="Upstream" />
+    <capacitor name="C_SH_UP" capacitance="4.7nF" footprint="0402" pcbX={-21.8} pcbY={-4.32} schSectionName="Upstream" schOrientation="vertical" />
+    <resistor name="R_SH_D1" resistance="1M" footprint="0402" pcbX={23.9} pcbY={5.68} pcbRotation={180} schSectionName="Output1" />
+    <capacitor name="C_SH_D1" capacitance="4.7nF" footprint="0402" pcbX={24.8} pcbY={4} pcbRotation={180} schSectionName="Output1" schOrientation="vertical" />
+    <resistor name="R_SH_D2" resistance="1M" footprint="0402" pcbX={23.9} pcbY={-5.68} pcbRotation={180} schSectionName="Output2" />
+    <capacitor name="C_SH_D2" capacitance="4.7nF" footprint="0402" pcbX={24.8} pcbY={-4} pcbRotation={180} schSectionName="Output2" schOrientation="vertical" />
 
     <hole name="H1" diameter="3.2mm" pcbX={-29} pcbY={16} />
     <hole name="H2" diameter="3.2mm" pcbX={15} pcbY={17} />
