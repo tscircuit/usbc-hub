@@ -10,9 +10,12 @@ in advance.
 ## Already verified
 
 - [x] TypeScript typecheck passes.
-- [x] `tsci build` completes with 153 routed traces, no jumpers, and no router errors.
-- [x] Generated build DRC contains no errors or warnings, including the placement
-      DRC (courtyard overlaps, board-edge and mounting-hole clearance).
+- [x] `tsci build` completes with 183 routed traces, no jumpers, and no router
+      errors. The PCB JSON contains zero `pcb_trace_error`,
+      `pcb_placement_error`, and `pcb_autorouting_error` records.
+- [ ] Resolve the remaining build warnings before production release: the parts
+      engine reports generic-0402 versus supplier-footprint mismatches. No PCB
+      trace, placement, autorouting, or schematic chip-overlap errors remain.
 - [x] `tsci check shorts index.circuit.tsx` reports no shorts.
 - [x] Schematic and PCB snapshots are committed under `__snapshots__/`. CI enforces
       only the schematic snapshot: the PCB snapshot contains autorouted geometry
@@ -20,8 +23,8 @@ in advance.
       reference rather than a regression gate. Freezing it would require pinning
       the route via `pcbRouteCache`, which is not worth doing while the autoroute
       is still slated for manual replacement.
-- [x] USB2512B crystal load capacitors, AP2176 local bypass capacitors, bottom GND pour, and exposed-pad thermal vias are present in the source and BOM.
-- [x] AP2176 SO-8 pin mapping, active-high enables, and open-drain fault connections match the manufacturer data sheet.
+- [x] USB2512B crystal load capacitors, AP2166 local bypass capacitors, bottom GND pour, and exposed-pad thermal vias are present in the source and BOM.
+- [x] AP2166 SO-8 pin mapping, active-low enables, and open-drain fault connections match the manufacturer data sheet.
 - [x] USBLC6-2SC6 low-capacitance ESD protection is present at the upstream and both downstream connectors, with VBUS/GND returns connected.
 
 ## Closed against the Microchip schematic checklist (DS00004539)
@@ -41,37 +44,49 @@ These were open deviations from the vendor checklist and are now fixed in source
       capacitor, both placed 1.1-1.7 mm from their pin.
 - [x] Unswitched bulk on `V5_SYS` reduced from 14.7 uF to 9.4 uF, inside the
       USB-IF 10 uF inrush limit the checklist quotes.
-- [x] Open-drain AP2176 `FLGx` outputs have 10 kOhm pull-ups to 3.3 V, so
+- [x] Open-drain AP2166 `FLGx` outputs have 10 kOhm pull-ups to 3.3 V, so
       `OCS_Nx` no longer reads a permanent fault.
 - [x] One decoupling capacitor per hub supply pin, each on that pin's own package
       edge; worst supply-pin distance is 1.8 mm (was 8.4 mm).
 - [x] `F1` current rating declares `0.5A`. `currentRating="500mA"` was parsed as
       500 A by tscircuit, so the circuit JSON and schematic both read 500 A.
       Report upstream: any SI prefix on this prop is silently dropped.
-- [x] Downstream `Rp` references the switched port VBUS rather than unswitched
-      `V5_SYS`, so a port no longer advertises a source with its switch off.
 
 ## Blocking electrical changes
 
 ### Downstream USB-C source control
 
-- [ ] Select a specific Type-C source-port controller, or a combined Type-C controller and VBUS power switch, for each downstream port.
-- [ ] Connect each downstream `CC1`/`CC2` pair to its controller; remove the assumption that passive 56 kOhm `Rp` resistors alone provide complete source-port control. `Rp` now references the switched port VBUS, which fixes advertising a source with no VBUS, but does not add CC attach detection or VBUS discharge.
-- [ ] Reconcile the advertised current with the input budget: 56 kOhm advertises default USB power (500 mA) on *each* downstream port, against a 500 mA bus-powered input.
-- [ ] Confirm the `Rp` pull-up rail stays inside the 4.75-5.5 V that the 56 kOhm value assumes; `VBUS_Px` sits behind the 500 mA PPTC and the AP2176.
-- [ ] Make the Type-C controller own VBUS attach/detach behavior, including VBUS enable and controlled discharge.
-- [ ] Connect `USB2512B PRTPWRx` to the controller's enable interface as appropriate. If the Type-C and power-switch functions are separate, the Type-C controller must control the power-switch enable.
-- [ ] Connect the selected controller/power-switch fault output to `USB2512B OCS_Nx` with the correct polarity and open-drain behavior.
-- [ ] Set the advertised Type-C current capability to match the actual system power budget.
+- [x] Select a production Type-C source-port controller for each downstream
+      port: TI TUSB319-Q1 (`TUSB319IDRFRQ1`, supplier candidate C132553).
+- [x] Connect each downstream `CC1`/`CC2` pair to its TUSB319 controller; the
+      controllers generate the source Rp and handle attach/orientation state.
+- [x] Tie `CURRENT_MODE` low for the TUSB319 default-current mode and add local
+      100 nF VDD bypass capacitors.
+- [x] Connect each switched port VBUS to `VBUS_DET` through 900 kOhm, matching
+      the TUSB319 application guidance.
+- [x] Combine each TUSB319 open-drain `ID` signal with USB2512B `PRTPWRx` through
+      a 2N7002 and 200 kOhm pull-up so the AP2166 active-low enable requires both
+      attach and hub permission.
+- [x] Add controlled detached-port VBUS discharge: AP2166 enable drives a
+      second 2N7002 and 1 kOhm path to ground on each switched VBUS.
+- [x] Connect the AP2166 open-drain fault outputs to USB2512B `OCS_Nx` with
+      10 kOhm pull-ups.
+- [x] Keep the TUSB319 supply on the post-fuse `V5_SYS` rail and switched-port
+      `VBUS_DET` sense on each port VBUS.
+- [ ] Reconcile default-current advertisement (500 mA per downstream port)
+      with the 500 mA bus-powered input, USB2512B load, startup, and two-port
+      simultaneous-load budget.
+- [ ] Validate the exact TUSB319 supplier part, WSON land pattern, exposed-pad
+      grounding, pin-1 orientation, and attach/detach behavior on hardware.
 
 ### Power budget and protection
 
 - [ ] Calculate worst-case input current for the USB2512B, 3.3 V regulator, both downstream ports, startup, and fault conditions.
 - [ ] Decide whether this remains a bus-powered hub or becomes self-powered. Size the upstream protection and source accordingly.
 - [ ] Replace the 500 mA whole-board fuse/supply assumption if the selected port capability requires more current; verify the fuse's hold/trip current, voltage rating, surge behavior, and temperature derating.
-- [ ] Select per-port current limits and an aggregate protection strategy. Do not treat the dual AP2176 channel limits as an aggregate two-port budget.
+- [ ] Select per-port current limits and an aggregate protection strategy. Do not treat the dual AP2166 channel limits as an aggregate two-port budget.
 - [ ] Verify VBUS inrush and bulk-capacitance limits at the upstream port and downstream ports.
-- [ ] Check AP2176 switch dissipation and connector/trace temperature under sustained load and short-circuit conditions.
+- [ ] Check AP2166 switch dissipation and connector/trace temperature under sustained load and short-circuit conditions.
 
 ### USB ESD and EMI
 
@@ -97,7 +112,7 @@ These were open deviations from the vendor checklist and are now fixed in source
 ## BOM and component release
 
 - [ ] Replace generic BOM descriptions with exact orderable manufacturer and supplier part numbers for every component. `Y1` and `F1` are still generic; `FB1` names a candidate part whose DC current rating has not been checked against the hub's analog supply current.
-- [ ] Confirm the `OCS_Nx` pull-ups are actually required. They match the AP2176 typical application circuit, but the USB251xB pin-description table was not readable in the PDFs consulted; if `OCS_Nx` has a guaranteed internal pull-up, R_OCS1/R_OCS2 can be depopulated.
+- [ ] Confirm the `OCS_Nx` pull-ups are actually required. They match the AP2166 typical application circuit, but the USB251xB pin-description table was not readable in the PDFs consulted; if `OCS_Nx` has a guaranteed internal pull-up, R_OCS1/R_OCS2 can be depopulated.
 - [ ] Verify the hand-rolled USB2512B land pattern against the datasheet package drawing, in particular the 3.4 x 3.4 mm exposed pad, which is an estimate and is the part's only ground connection.
 - [ ] Confirm the USB2512B, Type-C controllers, power switches, regulator, fuse, connectors, and crystal are available from the intended supplier and have approved alternates.
 - [ ] Confirm every resistor and capacitor's tolerance, voltage rating, dielectric, temperature rating, package, and supplier footprint.
@@ -108,11 +123,15 @@ These were open deviations from the vendor checklist and are now fixed in source
 
 ## Final validation and fabrication package
 
-- [ ] Re-run `npm run typecheck` and the documented `tsci build` after all electrical and layout changes.
-- [ ] Re-run `npx tsci check shorts index.circuit.tsx` and inspect any new shorts, clearance, placement, netlist, or trace-length findings.
+- [x] Re-run `npm run typecheck` and the documented `tsci build` after all electrical and layout changes.
+- [x] Re-run `npx tsci check shorts index.circuit.tsx`; no shorts were reported and
+      the final PCB JSON has no trace, placement, or autorouter errors.
 - [ ] Verify schematic/netlist connectivity, power-pin requirements, reference designators, and all intentional no-connects.
-- [ ] Generate and inspect Gerbers, NC drill files, board outline, and any required impedance/stack-up notes.
-- [ ] Generate the final BOM and pick-and-place files from the exact released source; confirm reference designators and quantities match.
+- [x] Generate a preliminary Gerber/NC-drill/board-outline archive and a KiCad
+      export from the validated source. These remain review artifacts, not an
+      ordering approval.
+- [x] Generate preliminary BOM and pick-and-place files from the validated
+      source; exact supplier qualification remains open.
 - [ ] Run a manufacturer DFM/assembly review, including panelization, fiducials, paste, solder mask, via filling, and connector assembly.
 - [ ] Perform a first-article bring-up plan covering current limit, VBUS attach/detach, overcurrent response, inrush, USB enumeration, high-speed eye/throughput testing, ESD, EMI, and thermal behavior.
 - [ ] Approve the release only after the Type-C source behavior, power budget, ESD/EMI protection, signal integrity, BOM, and fabrication outputs are signed off.
@@ -121,4 +140,5 @@ These were open deviations from the vendor checklist and are now fixed in source
 
 - [Microchip USB2512B Hardware Design Checklist, DS00004539](https://ww1.microchip.com/downloads/aemDocuments/documents/UNG/ProductDocuments/DesignChecklist/USB2512B-Hardware-Design-Checklist-00004539.pdf)
 - [Microchip USB251xB/xBi Data Sheet, DS00001692](https://ww1.microchip.com/downloads/aemDocuments/documents/UNG/ProductDocuments/DataSheets/USB251xB-xBi-Data-Sheet-DS00001692.pdf)
-- [Diodes AP2176 product information](https://www.diodes.com/part/view/AP2176)
+- [Diodes AP2166/AP2176 product information](https://www.diodes.com/part/view/AP2166)
+- [TI TUSB319-Q1 data sheet](https://www.ti.com/lit/ds/symlink/tusb319-q1.pdf)
