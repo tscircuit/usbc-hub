@@ -1,3 +1,5 @@
+import { USBLC6_2SC6 } from "./imports/USBLC6_2SC6"
+
 const usb2512bPinLabels = {
   pin1: ["USBDM_DN1", "D1N"],
   pin2: ["USBDP_DN1", "D1P"],
@@ -63,6 +65,13 @@ const UsbC16 = (props: any) => (
     manufacturerPartNumber="HRO-TYPE-C-31-M-12"
     pinLabels={usbC16PinLabels}
     noConnect={["SBU1", "SBU2"]}
+    internallyConnectedPins={[
+      ["pin1", "pin8"],
+      ["pin2", "pin7"],
+      ["pin4", "pin10"],
+      ["pin5", "pin11"],
+      ["pin13", "pin14", "pin15", "pin16"],
+    ]}
     footprint={
       <footprint insertionDirection="from_front">
         <hole pcbX="-2.89mm" pcbY="-2.6mm" diameter="0.65mm" />
@@ -316,14 +325,14 @@ const Ap2176s = (props: any) => (
     manufacturerPartNumber="AP2176SG-13"
     footprint="soic8"
     pinLabels={{
-      pin1: "ENA",
-      pin2: "FLAGA_N",
-      pin3: "FLAGB_N",
-      pin4: "ENB",
-      pin5: "OUTB",
-      pin6: "GND",
-      pin7: "IN",
-      pin8: "OUTA",
+      pin1: "OUTA",
+      pin2: "IN",
+      pin3: "OUTB",
+      pin4: "GND",
+      pin5: "FLAGA_N",
+      pin6: "FLAGB_N",
+      pin7: "ENB",
+      pin8: "ENA",
     }}
     pinAttributes={{
       IN: { requiresPower: true },
@@ -335,31 +344,30 @@ const Ap2176s = (props: any) => (
 )
 
 const dataTraces = [
-  ["UP_DP_A", "J_UP.DP1", "net.USB_UP_DP"],
-  ["UP_DP_B", "J_UP.DP2", "net.USB_UP_DP"],
-  ["UP_DM_A", "J_UP.DM1", "net.USB_UP_DM"],
-  ["UP_DM_B", "J_UP.DM2", "net.USB_UP_DM"],
+  ["UP_DP_CONNECTOR", "J_UP.DP1", "D_ESD_UP.IO1_IN"],
+  ["UP_DP_HUB", "D_ESD_UP.IO1_OUT", "net.USB_UP_DP"],
+  ["UP_DM_CONNECTOR", "J_UP.DM1", "D_ESD_UP.IO2_IN"],
+  ["UP_DM_HUB", "D_ESD_UP.IO2_OUT", "net.USB_UP_DM"],
   ["HUB_UP_DP", "U1.USBDP_UP", "net.USB_UP_DP"],
   ["HUB_UP_DM", "U1.USBDM_UP", "net.USB_UP_DM"],
 
-  ["P1_DP_A", "J_D1.DP1", "net.USB_P1_DP"],
-  ["P1_DP_B", "J_D1.DP2", "net.USB_P1_DP"],
-  ["P1_DM_A", "J_D1.DM1", "net.USB_P1_DM"],
-  ["P1_DM_B", "J_D1.DM2", "net.USB_P1_DM"],
+  ["P1_DP_CONNECTOR", "J_D1.DP1", "D_ESD_D1.IO1_IN"],
+  ["P1_DP_HUB", "D_ESD_D1.IO1_OUT", "net.USB_P1_DP"],
+  ["P1_DM_CONNECTOR", "J_D1.DM1", "D_ESD_D1.IO2_IN"],
+  ["P1_DM_HUB", "D_ESD_D1.IO2_OUT", "net.USB_P1_DM"],
   ["HUB_P1_DP", "U1.USBDP_DN1", "net.USB_P1_DP"],
   ["HUB_P1_DM", "U1.USBDM_DN1", "net.USB_P1_DM"],
 
-  ["P2_DP_A", "J_D2.DP1", "net.USB_P2_DP"],
-  ["P2_DP_B", "J_D2.DP2", "net.USB_P2_DP"],
-  ["P2_DM_A", "J_D2.DM1", "net.USB_P2_DM"],
-  ["P2_DM_B", "J_D2.DM2", "net.USB_P2_DM"],
+  ["P2_DP_CONNECTOR", "J_D2.DP1", "D_ESD_D2.IO1_IN"],
+  ["P2_DP_HUB", "D_ESD_D2.IO1_OUT", "net.USB_P2_DP"],
+  ["P2_DM_CONNECTOR", "J_D2.DM1", "D_ESD_D2.IO2_IN"],
+  ["P2_DM_HUB", "D_ESD_D2.IO2_OUT", "net.USB_P2_DM"],
   ["HUB_P2_DP", "U1.USBDP_DN2", "net.USB_P2_DP"],
   ["HUB_P2_DM", "U1.USBDM_DN2", "net.USB_P2_DM"],
 ] as const
 
 const powerTraces = [
   ["UP_VBUS_A", "J_UP.VBUS1", "net.VBUS_UP"],
-  ["UP_VBUS_B", "J_UP.VBUS2", "net.VBUS_UP"],
   ["FUSE_IN", "F1.pin1", "net.VBUS_UP"],
   ["FUSE_OUT", "F1.pin2", "net.V5_SYS"],
   ["LDO_IN", "U3.VIN", "net.V5_SYS"],
@@ -369,18 +377,13 @@ const powerTraces = [
   ["SWITCH_OUT_A", "U2.OUTA", "net.VBUS_P1"],
   ["SWITCH_OUT_B", "U2.OUTB", "net.VBUS_P2"],
   ["PORT1_VBUS_A", "J_D1.VBUS1", "net.VBUS_P1"],
-  ["PORT1_VBUS_B", "J_D1.VBUS2", "net.VBUS_P1"],
   ["PORT2_VBUS_A", "J_D2.VBUS1", "net.VBUS_P2"],
-  ["PORT2_VBUS_B", "J_D2.VBUS2", "net.VBUS_P2"],
 ] as const
 
 const groundTraces = [
   ["UP_GND_A", "J_UP.GND1", "net.GND"],
-  ["UP_GND_B", "J_UP.GND2", "net.GND"],
   ["P1_GND_A", "J_D1.GND1", "net.GND"],
-  ["P1_GND_B", "J_D1.GND2", "net.GND"],
   ["P2_GND_A", "J_D2.GND1", "net.GND"],
-  ["P2_GND_B", "J_D2.GND2", "net.GND"],
   ["LDO_GND", "U3.GND", "net.GND"],
   ["SWITCH_GND", "U2.GND", "net.GND"],
   ["HUB_EP_GND", "U1.GND_EP", "net.GND"],
@@ -395,6 +398,15 @@ const hubPowerTraces = [
   ["HUB_VDD2", "U1.VDD33_2", "net.V3_3"],
 ] as const
 
+const esdTraces = [
+  ["ESD_UP_VBUS", "D_ESD_UP.VBUS", "net.VBUS_UP"],
+  ["ESD_UP_GND", "D_ESD_UP.GND", "net.GND"],
+  ["ESD_D1_VBUS", "D_ESD_D1.VBUS", "net.VBUS_P1"],
+  ["ESD_D1_GND", "D_ESD_D1.GND", "net.GND"],
+  ["ESD_D2_VBUS", "D_ESD_D2.VBUS", "net.VBUS_P2"],
+  ["ESD_D2_GND", "D_ESD_D2.GND", "net.GND"],
+] as const
+
 const UsbC12Hub = () => (
   <board
     title="USB-C 1-to-2 USB 2.0 Hub"
@@ -404,7 +416,7 @@ const UsbC12Hub = () => (
     borderRadius="2mm"
     isViaInPadAllowed
     defaultTraceWidth="0.15mm"
-    autorouterEffortLevel="1x"
+    autorouterEffortLevel="2x"
     autorouter={{
       preset: "auto",
       traceClearance: "0.15mm",
@@ -452,6 +464,34 @@ const UsbC12Hub = () => (
       schSectionName="Output2"
       schX={20}
       schY={-8}
+    />
+
+    <USBLC6_2SC6
+      name="D_ESD_UP"
+      pcbX={-22}
+      pcbY={0}
+      pcbRotation={90}
+      schSectionName="Upstream"
+      schX={-16}
+      schY={-8}
+    />
+    <USBLC6_2SC6
+      name="D_ESD_D1"
+      pcbX={22}
+      pcbY={12.5}
+      pcbRotation={270}
+      schSectionName="Output1"
+      schX={16}
+      schY={13}
+    />
+    <USBLC6_2SC6
+      name="D_ESD_D2"
+      pcbX={22}
+      pcbY={-12.5}
+      pcbRotation={270}
+      schSectionName="Output2"
+      schX={16}
+      schY={-13}
     />
 
     <Usb2512B name="U1" pcbX={0} pcbY={0} schSectionName="Hub" schX={0} schY={0} />
@@ -532,8 +572,8 @@ const UsbC12Hub = () => (
     <capacitor name="C_CRFILT" capacitance="100nF" footprint="0402" pcbX={-2} pcbY={-5} schSectionName="Hub" schX={-1.9} schY={-8} schOrientation="vertical" />
     <capacitor name="C_PLLFILT" capacitance="100nF" footprint="0402" pcbX={2} pcbY={-5} schSectionName="Hub" schX={2} schY={-8} schOrientation="vertical" />
     <capacitor name="C_RESET" capacitance="1uF" footprint="0603" pcbX={-11} pcbY={-2} schSectionName="Hub" schX={-5} schY={-4} schOrientation="vertical" />
-    <capacitor name="C_PORT1" capacitance="10uF" footprint="0805" pcbX={21} pcbY={9} schSectionName="Output1" schX={16} schY={6} schOrientation="vertical" />
-    <capacitor name="C_PORT2" capacitance="10uF" footprint="0805" pcbX={21} pcbY={-9} schSectionName="Output2" schX={16} schY={-10} schOrientation="vertical" />
+    <capacitor name="C_PORT1" capacitance="10uF" footprint="0805" pcbX={18.5} pcbY={9} schSectionName="Output1" schX={16} schY={6} schOrientation="vertical" />
+    <capacitor name="C_PORT2" capacitance="10uF" footprint="0805" pcbX={18.5} pcbY={-9} schSectionName="Output2" schX={16} schY={-10} schOrientation="vertical" />
     <capacitor name="C_U2_IN_BULK" capacitance="10uF" footprint="0805" pcbX={10.5} pcbY={-4.5} schSectionName="PortPower" schX={7} schY={-3} schOrientation="vertical" />
     <capacitor name="C_U2_IN" capacitance="100nF" footprint="0402" pcbX={11.5} pcbY={3} schSectionName="PortPower" schX={7} schY={3} schOrientation="vertical" />
     <capacitor name="C_U2_OUTA" capacitance="100nF" footprint="0402" pcbX={20.5} pcbY={3} schSectionName="PortPower" schX={13} schY={3} schOrientation="vertical" />
@@ -571,6 +611,16 @@ const UsbC12Hub = () => (
         <trace name={name} from={from} to={to} thickness="0.35mm" />
       </group>
     ))}
+    {esdTraces.map(([name, from, to]) => (
+      <group key={name}>
+        <trace
+          name={name}
+          from={from}
+          to={to}
+          thickness={name.endsWith("VBUS") ? "0.5mm" : "0.15mm"}
+        />
+      </group>
+    ))}
 
     <trace name="PWR_EN_A" from="U1.PRTPWR1" to="U2.ENA" thickness="0.15mm" />
     <trace name="PWR_EN_B" from="U1.PRTPWR2" to="U2.ENB" thickness="0.15mm" />
@@ -583,13 +633,13 @@ const UsbC12Hub = () => (
     <trace name="CC_UP2_GND" from="R_CC_UP2.pin2" to="net.GND" thickness="0.15mm" />
 
     <trace name="CC_D1_1" from="J_D1.CC1" to="R_CC_D1_1.pin1" />
-    <trace name="CC_D1_1_RP" from="R_CC_D1_1.pin2" to="net.V5_SYS" />
+    <trace name="CC_D1_1_RP" from="R_CC_D1_1.pin2" to="net.VBUS_P1" />
     <trace name="CC_D1_2" from="J_D1.CC2" to="R_CC_D1_2.pin1" />
-    <trace name="CC_D1_2_RP" from="R_CC_D1_2.pin2" to="net.V5_SYS" />
+    <trace name="CC_D1_2_RP" from="R_CC_D1_2.pin2" to="net.VBUS_P1" />
     <trace name="CC_D2_1" from="J_D2.CC1" to="R_CC_D2_1.pin1" />
-    <trace name="CC_D2_1_RP" from="R_CC_D2_1.pin2" to="net.V5_SYS" />
+    <trace name="CC_D2_1_RP" from="R_CC_D2_1.pin2" to="net.VBUS_P2" />
     <trace name="CC_D2_2" from="J_D2.CC2" to="R_CC_D2_2.pin1" />
-    <trace name="CC_D2_2_RP" from="R_CC_D2_2.pin2" to="net.V5_SYS" />
+    <trace name="CC_D2_2_RP" from="R_CC_D2_2.pin2" to="net.VBUS_P2" />
 
     <trace name="VBUS_DIV_IN" from="R_VBUS_HI.pin1" to="net.VBUS_UP" />
     <trace name="VBUS_DIV_MID_A" from="R_VBUS_HI.pin2" to="net.VBUS_DET" />
@@ -663,9 +713,6 @@ const UsbC12Hub = () => (
     ].map(([suffix, connector]) => (
       <group key={`shield-${suffix}`}>
         <trace name={`SH_${suffix}_1`} from={`${connector}.SHELL1`} to={`net.SHIELD_${suffix}`} />
-        <trace name={`SH_${suffix}_2`} from={`${connector}.SHELL2`} to={`net.SHIELD_${suffix}`} />
-        <trace name={`SH_${suffix}_3`} from={`${connector}.SHELL3`} to={`net.SHIELD_${suffix}`} />
-        <trace name={`SH_${suffix}_4`} from={`${connector}.SHELL4`} to={`net.SHIELD_${suffix}`} />
         <trace name={`SH_${suffix}_R_IN`} from={`R_SH_${suffix}.pin1`} to={`net.SHIELD_${suffix}`} />
         <trace name={`SH_${suffix}_R_GND`} from={`R_SH_${suffix}.pin2`} to="net.GND" thickness="0.15mm" />
         <trace name={`SH_${suffix}_C_IN`} from={`C_SH_${suffix}.pin1`} to={`net.SHIELD_${suffix}`} />

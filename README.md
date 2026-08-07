@@ -8,6 +8,7 @@ This tscircuit project is a compact USB 2.0 High-Speed hub with one upstream USB
 - Hardware-strapped bus-powered configuration; no firmware or EEPROM
 - AP2112K-3.3 regulator for the hub's 3.3 V rail
 - AP2176S dual current-limited downstream power switch
+- USBLC6-2SC6 low-capacitance ESD protection at all three USB connectors
 - USB-C upstream `Rd` resistors (5.1 kOhm)
 - USB-C downstream default-current `Rp` resistors (56 kOhm)
 - 500 mA resettable input fuse
@@ -31,12 +32,13 @@ baseline; fabrication still requires a controlled-impedance layout review.
 ## Engineering notes
 
 - This is a simple USB 2.0 reference design, not a USB Power Delivery hub.
-- The passive downstream USB-C `Rp` implementation advertises default USB current. `PRTPWRx` only enables the AP2176 switch; it does not detect CC attach or provide VBUS discharge. A product intended for USB-IF compliance still needs a dedicated Type-C source/port controller per downstream port, with that controller owning VBUS enable.
+- The passive downstream USB-C `Rp` implementation advertises default USB current from each switched port VBUS rail. `PRTPWRx` only enables the AP2176 switch; it does not detect CC attach or provide VBUS discharge. A product intended for USB-IF compliance still needs a dedicated Type-C source/port controller per downstream port, with that controller owning VBUS enable.
+- The AP2176 SO-8 pin map follows the manufacturer data sheet: `OUT1`, `IN`, `OUT2`, `GND`, `FLG1`, `FLG2`, `EN2`, `EN1`. Its active-high enable and open-drain fault outputs are connected to the USB2512B port-power and over-current signals.
 - The source includes a bottom-layer GND pour, but the generated route remains a layout baseline. Before fabrication, reroute or tune each D+/D- pair as a 90-ohm differential pair with matched lengths for the chosen two-layer stack-up, and confirm the pour remains continuous around the high-speed paths.
 - The USB2512B exposed pad is the only IC ground connection. The footprint now uses a five-via thermal array tied to the bottom GND pour; confirm the via drill, solder-mask, and paste strategy with the assembler.
 - C_XTAL1/C_XTAL2 are 18 pF starting values for the specified 12 pF crystal load. Recalculate them from the selected crystal's C0 and board stray capacitance before release.
 - The AP2176 now has local 10 uF input bulk plus 100 nF input/output bypass capacitors. The 500 mA upstream fuse still limits the whole bus-powered design, while the AP2176 per-port current limit is not an aggregate two-port budget; verify worst-case hub and downstream load current before fabrication.
-- No external USB ESD/EMI protection is fitted yet. Add and route suitable protection at all three connectors, then recheck connector part numbers, footprint dimensions, component availability, USB inrush, thermal behavior, and USB-IF compliance.
+- USBLC6-2SC6 protection is now present at all three connectors, with its VBUS and GND pins connected to the corresponding rails. The final layout still needs a connector-to-protector placement/branch-stub review, signal-integrity verification, and EMI testing; add common-mode chokes only if testing requires them.
 
 ## References
 

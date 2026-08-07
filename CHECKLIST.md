@@ -15,6 +15,8 @@ in advance.
 - [x] `tsci check shorts index.circuit.tsx` reports no shorts.
 - [x] Schematic and PCB snapshots are committed under `__snapshots__/`.
 - [x] USB2512B crystal load capacitors, AP2176 local bypass capacitors, bottom GND pour, and exposed-pad thermal vias are present in the source and BOM.
+- [x] AP2176 SO-8 pin mapping, active-high enables, and open-drain fault connections match the manufacturer data sheet.
+- [x] USBLC6-2SC6 low-capacitance ESD protection is present at the upstream and both downstream connectors, with VBUS/GND returns connected.
 
 ## Blocking electrical changes
 
@@ -38,10 +40,10 @@ in advance.
 
 ### USB ESD and EMI
 
-- [ ] Select high-speed USB ESD/TVS protection for the upstream and both downstream connectors.
+- [x] Select high-speed USB ESD/TVS protection for the upstream and both downstream connectors: USBLC6-2SC6.
 - [ ] Add common-mode chokes only if signal-integrity and EMI testing show they are needed; select parts with appropriate USB 2.0 capacitance.
-- [ ] Place protection directly at each connector, on the same layer as the USB traces, without branch stubs.
-- [ ] Route each protection device to the GND plane with the shortest practical low-impedance path.
+- [ ] Confirm the generated connector-to-protector routing is directly adjacent, on the same layer as the USB traces, and free of branch stubs.
+- [ ] Verify each protection device's GND route to the plane is the shortest practical low-impedance path.
 - [ ] Recheck the shield RC network and connector shield-to-ground strategy after adding protection.
 
 ## PCB and signal-integrity review
